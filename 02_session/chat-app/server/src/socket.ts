@@ -24,11 +24,29 @@ function socket({ io }: { io: Server }) {
   io.on(EVENTS.connection, (socket: Socket) => {
     logger.info(`User connected ${socket.id}`);
 
-    socket.emit(EVENTS.SERVER.ROOMS, rooms);
+    // socket.emit(EVENTS.SERVER.ROOMS, rooms);
 
     /*
      * When a user creates a new room
      */
+    socket.on(EVENTS.CLIENT.CREATE_ROOM, ({ roomName }) => {
+      console.log({ roomName });
+      // create a room id
+      const roomId = nanoid();
+
+      // add a new room to the rooms object
+      rooms[roomId] = {
+        name: roomName,
+      };
+      socket.join(roomId);
+      //
+      socket.broadcast.emit(EVENTS.SERVER.ROOMS, rooms);
+
+      //
+      socket.emit(EVENTS.SERVER.ROOMS, rooms);
+
+      socket.emit(EVENTS.SERVER.JOINED_ROOM, roomId);
+    });
 
     /*
      * When a user sends a room message

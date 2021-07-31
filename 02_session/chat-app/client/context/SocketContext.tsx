@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import io, { Socket } from "socket.io-client";
 import { SOCKET_URL } from "../config/default";
+import EVENTS from "../config/events";
 
 interface ScoketContext {
   socket: Socket;
@@ -27,6 +28,10 @@ function SocketsProvider(props: any) {
   const [roomId, setRoomId] = useState("");
   const [rooms, setRooms] = useState({});
   const [messages, setMessages] = useState([]);
+
+  socket.on(EVENTS.SERVER.ROOMS, (value) => {
+    setRooms(value);
+  });
   return (
     <SocketContext.Provider
       value={{
