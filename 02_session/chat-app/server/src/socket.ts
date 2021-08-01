@@ -52,6 +52,19 @@ function socket({ io }: { io: Server }) {
      * When a user sends a room message
      */
 
+    socket.on(
+      EVENTS.CLIENT.SEND_ROOM_MESSAGE,
+      ({ roomId, message, username }) => {
+        const date = new Date();
+
+        socket.to(roomId).emit(EVENTS.SERVER.ROOM_MESSAGE, {
+          message,
+          username,
+          time: `${date.getHours()}:${date.getMinutes()}`,
+        });
+      }
+    );
+
     /*
      * When a user joins a room
      */

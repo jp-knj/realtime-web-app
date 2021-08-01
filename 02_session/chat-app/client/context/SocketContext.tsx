@@ -32,6 +32,20 @@ function SocketsProvider(props: any) {
   socket.on(EVENTS.SERVER.ROOMS, (value) => {
     setRooms(value);
   });
+
+  socket.on(EVENTS.SERVER.JOINED_ROOM, (value) => {
+    setRoomId(value);
+
+    setMessages([]);
+  });
+
+  socket.on(EVENTS.SERVER.ROOM_MESSAGE, ({ message, username, time }) => {
+    if (!document.hasFocus()) {
+      document.title = "New message...";
+    }
+
+    setMessages([...messages, { message, username, time }]);
+  });
   return (
     <SocketContext.Provider
       value={{
