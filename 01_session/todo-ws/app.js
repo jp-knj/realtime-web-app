@@ -25,13 +25,54 @@ nextApp.prepare().then(
     // 接続中の全クライアントに現在のToDo一覧を送信する関数
     function sendTodosToOpenClient() {
       ws.clients.forEach((client) => {
+        // 接続がオープンかどうか
         if (client.readyState === WebSocket.OPEN) {
+          // クライアントにデータを送信(シリアライズする)
           client.send(JSON.stringify(todos));
         }
       });
     }
+    ws.on("connection", (socket) => {
+      console.log("connected");
+      // 接続したクライアントにToDo一覧を送信
+      socket.send(JSON.stringify(todos));
+      // 接続したクライアントからの各イベントを受信
+      socket.on("message", (message) => {
+        // データを受信(デシリアライズする)
+        const { type, data } = JSON.parse(message);
+        switch (type) {
+          // ToDo作成
+          case "createTodo": {
+            const title = data;
+            // 入力値をバリデートする
+            if (typeof title !== "string" || !title) {
+              return;
+            }
+            // 値を割り当てる
+            const todo = { id: (id += 1), title, completed: false };
+            todos.push(todo);
+            return sendTodosToOpenClient();
+          }
+          // ToDoのcompletedの更新
+          case "updateCompleted": {
+            const { id, completed } = data;
+            todos = todos.map((todo) =>
+              todo.id === id ? { ...todo, completed } : todo
+            );
+            return sendTodosToOpenClient();
+          }
+          // ToDo削除
+          case "deleteTodo": {
+            const id = data;
+            todos = todos.filter((todo) => todo.id !== id);
+            return sendTodosToOpenClient();
+          }
+        }
+      });
+    });
   },
   (err) => {
     console.error(err);
+    process.exit(1);
   }
 );
