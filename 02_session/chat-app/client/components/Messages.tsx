@@ -24,6 +24,13 @@ const Messages = () => {
     ]);
     newMessageRef.current.value = "";
   }
+  useEffect(() => {
+    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  if (!roomId) {
+    return <div />;
+  }
   return (
     <div>
       <div>

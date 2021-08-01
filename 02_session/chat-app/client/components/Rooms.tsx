@@ -16,6 +16,13 @@ const Rooms = () => {
     // Input の value を空文字に戻す
     newRoomRef.current.value = "";
   }
+
+  function handleJoinRoom(key) {
+    if (key === roomId) return;
+
+    socket.emit(EVENTS.CLIENT.JOIN_ROOM, key);
+  }
+
   return (
     <nav>
       <div>
@@ -24,7 +31,17 @@ const Rooms = () => {
       </div>
       <ul>
         {Object.keys(rooms).map((key) => {
-          return <div key={key}>{rooms[key].name}</div>;
+          return (
+            <div key={key}>
+              <button
+                disabled={key === roomId}
+                title={`Join ${rooms[key].name}`}
+                onClick={() => handleJoinRoom(key)}
+              >
+                {rooms[key].name}
+              </button>
+            </div>
+          );
         })}
       </ul>
     </nav>
