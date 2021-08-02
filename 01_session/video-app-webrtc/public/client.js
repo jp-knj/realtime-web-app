@@ -166,6 +166,39 @@ function onclickButton_CreateOfferSDP() {
   createOfferSDP(rtcPeerConnection);
 }
 
+// 「Set OfferSDP and Create AnswerSDP.」ボタンを押すと呼ばれる関数
+function onclickButton_SetOfferSDPandCreateAnswerSDP() {
+  console.log(
+    "UI イベント : 'OfferSDPの準備とAnswerSDPの作成'ボタンをクリックされた"
+  );
+
+  if (g_rtcPeerConnection) {
+    // 既にコネクションオブジェクトあり
+    alert("Connection object already exists.");
+    return;
+  }
+
+  // OfferSDPを、テキストエリアから取得
+  let strOfferSDP = g_elementTextareaAnswerSideOfferSDP.value;
+  if (!strOfferSDP) {
+    // OfferSDPが空
+    alert("OfferSDP is empty. Please enter the OfferSDP.");
+    return;
+  }
+
+  // RTCPeerConnectionオブジェクトの作成
+  console.log("呼び出し: createPeerConnection()");
+  let rtcPeerConnection = createPeerConnection(g_elementVideoLocal.srcObject);
+  g_rtcPeerConnection = rtcPeerConnection; // グローバル変数に設定
+
+  // OfferSDPの設定とAnswerSDPの作成
+  let sessionDescription = new RTCSessionDescription({
+    type: "offer",
+    sdp: strOfferSDP,
+  });
+  console.log("Call : setOfferSDP_and_createAnswerSDP()");
+  setOfferSDP_and_createAnswerSDP(rtcPeerConnection, sessionDescription);
+}
 // Socket.IO関連の関数
 
 // DataChannel関連の関数
@@ -249,13 +282,26 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
     if ("complete" === rtcPeerConnection.iceGatheringState) {
       // Vanilla ICEの場合は、ICE candidateを含んだOfferSDP/AnswerSDPを相手に送る
       // Trickle ICEの場合は、何もしない
-
-      // Offer側のOfferSDP用のテキストエリアに貼付
-      console.log("- Set OfferSDP in textarea");
-      g_elementTextareaOfferSideOfferSDP.value =
-        rtcPeerConnection.localDescription.sdp;
-      g_elementTextareaOfferSideOfferSDP.focus();
-      g_elementTextareaOfferSideOfferSDP.select();
+      if ("offer" === rtcPeerConnection.localDescription.type) {
+        // Offer側のOfferSDP用のテキストエリアに貼付
+        console.log("- Set OfferSDP in textarea");
+        g_elementTextareaOfferSideOfferSDP.value =
+          rtcPeerConnection.localDescription.sdp;
+        g_elementTextareaOfferSideOfferSDP.focus();
+        g_elementTextareaOfferSideOfferSDP.select();
+      } else if ("answer" === rtcPeerConnection.localDescription.type) {
+        // Answer側のAnswerSDP用のテキストエリアに貼付
+        console.log("- Set AnswerSDP in textarea");
+        g_elementTextareaAnswerSideAnswerSDP.value =
+          rtcPeerConnection.localDescription.sdp;
+        g_elementTextareaAnswerSideAnswerSDP.focus();
+        g_elementTextareaAnswerSideAnswerSDP.select();
+      } else {
+        console.error(
+          "Unexpected : Unknown localDescription.type. type = ",
+          rtcPeerConnection.localDescription.type
+        );
+      }
     }
   };
 
@@ -324,6 +370,33 @@ function createOfferSDP(rtcPeerConnection) {
     .then((sessionDescription) => {
       // 作成されたOfferSDPををLocalDescriptionに設定
       console.log("呼び出し : rtcPeerConnection.setLocalDescription()");
+      return rtcPeerConnection.setLocalDescription(sessionDescription);
+    })
+    .then(() => {
+      // Vanilla ICEの場合は、まだSDPを相手に送らない
+      // Trickle ICEの場合は、初期SDPを相手に送る
+    })
+    .catch((error) => {
+      console.error("Error : ", error);
+    });
+}
+
+// OfferSDPの設定とAnswerSDPの作成
+function setOfferSDP_and_createAnswerSDP(
+  rtcPeerConnection,
+  sessionDescription
+) {
+  console.log("Call : rtcPeerConnection.setRemoteDescription()");
+  rtcPeerConnection
+    .setRemoteDescription(sessionDescription)
+    .then(() => {
+      // AnswerSDPの作成
+      console.log("Call : rtcPeerConnection.createAnswer()");
+      return rtcPeerConnection.createAnswer();
+    })
+    .then((sessionDescription) => {
+      // 作成されたAnswerSDPををLocalDescriptionに設定
+      console.log("Call : rtcPeerConnection.setLocalDescription()");
       return rtcPeerConnection.setLocalDescription(sessionDescription);
     })
     .then(() => {
