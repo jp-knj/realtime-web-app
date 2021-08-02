@@ -17,7 +17,8 @@
     <video id="video_local" width="320" height="240" style="border: 1px solid black;" autoplay></video>
     <video id="video_remote" width="320" height="240" style="border: 1px solid black;" autoplay></video>
     <audio id="audio_remote" autoplay></audio>
-    <table border="1">
+    <!--
+    <table border="1">	
         <tbody>
             <tr>
                 <td></td>
@@ -51,8 +52,12 @@
             </tr>
         </tbody>
     </table>
+    -->
+    <br />
+    <button onclick="onclickButton_SendOfferSDP()">OfferSDPをおくる</button>
 
     <!-- Script -->
+    <script src="/socket.io/socket.io.js"></script>
     <script src="./client.js"></script>
 </body>
 </html>

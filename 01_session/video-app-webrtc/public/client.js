@@ -9,7 +9,7 @@ const g_elementCheckboxMicrophone = document.getElementById(
 const g_elementVideoLocal = document.getElementById("video_local");
 
 // 交換する情報を表示するためのテキストエリア
-const g_elementTextareaOfferSideOfferSDP = document.getElementById(
+/* const g_elementTextareaOfferSideOfferSDP = document.getElementById(
   "textarea_offerside_offsersdp"
 );
 
@@ -27,6 +27,7 @@ const g_elementTextareaOfferSideAnswerSDP = document.getElementById(
 const g_elementTextareaAnswerSideAnswerSDP = document.getElementById(
   "textarea_answerside_answersdp"
 );
+*/
 
 // RTCPeerConnectionオブジェクト
 let g_rtcPeerConnection = null;
@@ -154,6 +155,7 @@ function setStreamToElement(elementMedia, stream) {
 }
 
 // 「Create OfferSDP.」ボタンを押すと呼ばれる関数
+/*
 function onclickButton_CreateOfferSDP() {
   console.log("UI イベント : 'Offer SDPを作成' ボタンは クリックされた");
 
@@ -171,8 +173,10 @@ function onclickButton_CreateOfferSDP() {
   // OfferSDPの作成
   createOfferSDP(rtcPeerConnection);
 }
+*/
 
 // 「Set OfferSDP and Create AnswerSDP.」ボタンを押すと呼ばれる関数
+/*
 function onclickButton_SetOfferSDPandCreateAnswerSDP() {
   console.log(
     "UI イベント : 'OfferSDPの準備とAnswerSDPの作成'ボタンをクリックされた"
@@ -205,8 +209,10 @@ function onclickButton_SetOfferSDPandCreateAnswerSDP() {
   console.log("Call : setOfferSDP_and_createAnswerSDP()");
   setOfferSDP_and_createAnswerSDP(rtcPeerConnection, sessionDescription);
 }
+*/
 
 // 「AnswerSDPの準備. チャットをはじめるよ.」ボタンを押すと呼ばれる関数
+/*
 function onclickButton_SetAnswerSDPthenChatStarts() {
   console.log(
     "UI Event : 'AnswerSDPの準備. チャットをはじめるよ' ボタンをクリックされた."
@@ -234,7 +240,7 @@ function onclickButton_SetAnswerSDPthenChatStarts() {
   console.log("呼び出し : setAnswerSDP()");
   setAnswerSDP(g_rtcPeerConnection, sessionDescription);
 }
-
+*/
 // Socket.IO関連の関数
 
 // DataChannel関連の関数
