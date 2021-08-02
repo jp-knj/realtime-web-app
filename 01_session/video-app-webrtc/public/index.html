@@ -5,6 +5,13 @@
     <title>My Video Chat</title>
 </head>
 <body>
-    <h1>My Video Chat</h1>
+    <h1>ビデオチャットアプリ</h1>
+    <input type="checkbox" id="checkbox_camera" onclick="onclickCheckbox_CameraMicrophone()">カメラ
+    <input type="checkbox" id="checkbox_microphone" onclick="onclickCheckbox_CameraMicrophone()">マイク
+    <br />
+    <video id="video_local" width="320" height="240" style="border: 1px solid black;" autoplay></video>
+
+    <!-- Script -->
+    <script src="./client.js"></script>
 </body>
 </html>
