@@ -199,6 +199,36 @@ function onclickButton_SetOfferSDPandCreateAnswerSDP() {
   console.log("Call : setOfferSDP_and_createAnswerSDP()");
   setOfferSDP_and_createAnswerSDP(rtcPeerConnection, sessionDescription);
 }
+
+// 「AnswerSDPの準備. チャットをはじめるよ.」ボタンを押すと呼ばれる関数
+function onclickButton_SetAnswerSDPthenChatStarts() {
+  console.log(
+    "UI Event : 'AnswerSDPの準備. チャットをはじめるよ' ボタンをクリックされた."
+  );
+
+  if (!g_rtcPeerConnection) {
+    // コネクションオブジェクトがない
+    alert("Connection object does not exist.");
+    return;
+  }
+
+  // AnswerSDPを、テキストエリアから取得
+  let strAnswerSDP = g_elementTextareaOfferSideAnswerSDP.value;
+  if (!strAnswerSDP) {
+    // AnswerSDPが空
+    alert("AnswerSDP is empty. Please enter the AnswerSDP.");
+    return;
+  }
+
+  // AnswerSDPの設定
+  let sessionDescription = new RTCSessionDescription({
+    type: "answer",
+    sdp: strAnswerSDP,
+  });
+  console.log("呼び出し : setAnswerSDP()");
+  setAnswerSDP(g_rtcPeerConnection, sessionDescription);
+}
+
 // Socket.IO関連の関数
 
 // DataChannel関連の関数
@@ -406,5 +436,13 @@ function setOfferSDP_and_createAnswerSDP(
     .catch((error) => {
       console.error("Error : ", error);
     });
+}
+
+// AnswerSDPの設定
+function setAnswerSDP(rtcPeerConnection, sessionDescription) {
+  console.log("呼び出し : rtcPeerConnection.setRemoteDescription()");
+  rtcPeerConnection.setRemoteDescription(sessionDescription).catch((error) => {
+    console.error("Error : ", error);
+  });
 }
 // その他の内部関数
