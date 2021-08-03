@@ -2,15 +2,54 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>My Video Chat</title>
+    <title>ビデオチャット</title>
+    <style type="text/css">
+        input:read-only, textarea:read-only {
+            background-color: #CCC;
+        }
+    </style>
 </head>
 <body>
-    <h1>My Video Chat</h1>
+    <h1>ビデオチャット</h1>
     <input type="checkbox" id="checkedCamera" onclick="checkedCameraOrMicrophone()">カメラ
     <input type="checkbox" id="checkedMicrophone" onclick="checkedCameraOrMicrophone()">マイク
     <br />
     <video id="videoLocal" width="320" height="240" style="border: 1px solid black;" autoplay></video>
 
+    <table border="1">
+        <tbody>
+            <tr>
+                <td></td>
+                <td>オファー側</td>
+                <td>アンサー側</td>
+            </tr>
+            <tr>
+                <td>オファーSDP</td>
+                <td>
+                    <button onclick="clickedCreateOfferSDP()">OfferSDPの作成</button>
+                    <br>
+                    <textarea id="offersideOfoffsersdp" rows="10" cols="40" readonly="readonly"></textarea>
+                </td>
+                <td>
+                    <br>
+                    <textarea id="textarea_answerside_offsersdp" rows="10" cols="40"></textarea>
+                </td>
+            </tr>
+            <tr>
+                <td>AnswerSDP</td>
+                <td>
+                    <br>
+                    <textarea id="textarea_offerside_answersdp" rows="10" cols="40"></textarea><br>
+		    <button onclick="clickedSetAnswerSDPthenChatStarts()">アンサーSDPの準備し、チャットをはじめる</button>
+                </td>
+                <td>
+                    <button onclick="clickedSetOfferSDPandCreateAnswerSDP()">オファーSDPの準備とアンサーSDPの作成</button>
+                    <br>
+                    <textarea id="textarea_answerside_answersdp" rows="10" cols="40" readonly="readonly"></textarea><br>
+                </td>
+            </tr>
+        </tbody>
+    </table>
     <!-- Script -->
     <script src="./client.js"></script>
 </body>
