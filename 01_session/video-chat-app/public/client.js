@@ -5,13 +5,13 @@ const elementCheckboxCamera = document.getElementById("checkedCamera");
 const elementCheckboxMicrophone = document.getElementById("checkedMicrophone");
 
 // オファー側/アンサー側のオファーSDP/アンサーSDPのテキストエリア
-const elementOfferSideOfferSDP = document.getElementById(
+const elementOfferSideOfOfferSDP = document.getElementById(
   "offersideOfoffsersdp"
 );
-const elementAnswerSideOfferSDP = document.getElementById(
+const elementAnswerSideOfOfferSDP = document.getElementById(
   "answersideOfoffsersdp"
 );
-const elementOfferSideAnswerSDP = document.getElementById(
+const elementOfferSideOfAnswerSDP = document.getElementById(
   "offersideOfanswersdp"
 );
 const elementAnswerSideOfAnswerSDP = document.getElementById(
@@ -22,6 +22,7 @@ let globalRTCPeerConnection = null;
 
 const elementVideoLocal = document.getElementById("videoLocal");
 
+// UI
 // カメラとマイクのOn/Offのチェックボックスを押すと呼ばれる関数
 function checkedCameraOrMicrophone() {
   console.log("UI Event : Camera/Microphone checked.");
@@ -125,7 +126,7 @@ function clickedCreateOfferSDP() {
 // RTCPeerConnectionオブジェクトの作成する関数
 function createPeerConnection(stream) {
   // RTCPeerConnectionオブジェクトの生成
-  let config = { "iceServers": [] };
+  let config = { iceServers: [] };
   let rtcPeerConnection = new RTCPeerConnection(config);
 
   // RTCPeerConnectionオブジェクトのイベントハンドラの構築
@@ -136,11 +137,62 @@ function createPeerConnection(stream) {
     stream.getTracks().forEach((track) => {
       rtcPeerConnection.addTrack(track, stream);
     });
-  }
-  else {
+  } else {
     console.log("No local stream.");
   }
   return rtcPeerConnection;
+}
+
+// RTCPeerConnection関連
+
+// OfferSDPの作成
+function createOfferSDP(rtcPeerConnection) {
+  // OfferSDPの作成
+  console.log("Call : rtcPeerConnection.createOffer()");
+  rtcPeerConnection
+    .createOffer()
+    .then((sessionDescription) => {
+      // 作成されたOfferSDPををLocalDescriptionに設定
+      console.log("Call : rtcPeerConnection.setLocalDescription()");
+      return rtcPeerConnection.setLocalDescription(sessionDescription);
+    })
+    .then(() => {
+      // Trickle ICEの場合は、初期SDPを相手に送る
+    })
+    .catch((error) => {
+      console.error("Error : ", error);
+    });
+}
+
+function setOfferSDPAndCreateAnswerSDP(rtcPeerConnection, sessionDescription) {
+  console.log("Call : rtcPeerConnection.setRemoteDescription()");
+  rtcPeerConnection
+    .setRemoteDescription(sessionDescription)
+    .then(() => {
+      // AnswerSDPの作成
+      console.log("Call : rtcPeerConnection.createAnswer()");
+      return rtcPeerConnection.createAnswer();
+    })
+    .then((sessionDescription) => {
+      // 作成されたAnswerSDPををLocalDescriptionに設定
+      console.log("Call : rtcPeerConnection.setLocalDescription()");
+      return rtcPeerConnection.setLocalDescription(sessionDescription);
+    })
+    .then(() => {
+      // Vanilla ICEの場合は、まだSDPを相手に送らない
+      // Trickle ICEの場合は、初期SDPを相手に送る
+    })
+    .catch((error) => {
+      console.error("Error : ", error);
+    });
+}
+
+// AnswerSDPの設定
+function setAnswerSDP(rtcPeerConnection, sessionDescription) {
+  console.log("Call : rtcPeerConnection.setRemoteDescription()");
+  rtcPeerConnection.setRemoteDescription(sessionDescription).catch((error) => {
+    console.error("Error : ", error);
+  });
 }
 
 // RTCPeerConnectionオブジェクトのイベントハンドラの構築
@@ -164,11 +216,12 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
   //   see : https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/onicecandidate
   rtcPeerConnection.onicecandidate = (event) => {
     console.log("Event : ICE candidate");
-    if (event.candidate) {   // ICE candidateがある
+    if (event.candidate) {
+      // ICE candidateがある
       console.log("- ICE candidate : ", event.candidate);
       // Trickle ICEの場合は、ICE candidateを相手に送る
-    }
-    else {   // ICE candiateがない = ICE candidate の収集終了。
+    } else {
+      // ICE candiateがない = ICE candidate の収集終了。
       console.log("- ICE candidate : empty");
     }
   };
@@ -177,7 +230,10 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
   // - このイベントは、ICE候補の収集処理中にエラーが発生した場合に発生する。
   //   see : https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/onicecandidateerror
   rtcPeerConnection.onicecandidateerror = (event) => {
-    console.error("Event : ICE candidate error. error code : ", event.errorCode);
+    console.error(
+      "Event : ICE candidate error. error code : ",
+      event.errorCode
+    );
   };
 
   // ICE gathering state change イベントが発生したときのイベントハンドラ
@@ -186,17 +242,35 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
   //   see : https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/onicegatheringstatechange
   rtcPeerConnection.onicegatheringstatechange = () => {
     console.log("Event : ICE gathering state change");
-    console.log("- ICE gathering state : ", rtcPeerConnection.iceGatheringState);
+    console.log(
+      "- ICE gathering state : ",
+      rtcPeerConnection.iceGatheringState
+    );
 
     if ("complete" === rtcPeerConnection.iceGatheringState) {
       // Vanilla ICEの場合は、ICE candidateを含んだOfferSDP/AnswerSDPを相手に送る
       // Trickle ICEの場合は、何もしない
 
-      // Offer側のOfferSDP用のテキストエリアに貼付
-      console.log("- Set OfferSDP in textarea");
-      elementOfferSideOfferSDP.value = rtcPeerConnection.localDescription.sdp;
-      elementOfferSideOfferSDP.focus();
-      elementOfferSideOfferSDP.select();
+      if ("offer" === rtcPeerConnection.localDescription.type) {
+        // Offer側のOfferSDP用のテキストエリアに貼付
+        console.log("- Set OfferSDP in textarea");
+        elementOfferSideOfOfferSDP.value =
+          rtcPeerConnection.localDescription.sdp;
+        elementOfferSideOfOfferSDP.focus();
+        elementOfferSideOfOfferSDP.select();
+      } else if ("answer" === rtcPeerConnection.localDescription.type) {
+        // Answer側のAnswerSDP用のテキストエリアに貼付
+        console.log("- Set AnswerSDP in textarea");
+        elementAnswerSideOfAnswerSDP.value =
+          rtcPeerConnection.localDescription.sdp;
+        elementAnswerSideOfAnswerSDP.focus();
+        elementAnswerSideOfAnswerSDP.select();
+      } else {
+        console.error(
+          "Unexpected : Unknown localDescription.type. type = ",
+          rtcPeerConnection.localDescription.type
+        );
+      }
     }
   };
 
@@ -209,7 +283,10 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
   //   see : https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/iceconnectionstatechange_event
   rtcPeerConnection.oniceconnectionstatechange = () => {
     console.log("Event : ICE connection state change");
-    console.log("- ICE connection state : ", rtcPeerConnection.iceConnectionState);
+    console.log(
+      "- ICE connection state : ",
+      rtcPeerConnection.iceConnectionState
+    );
     // "disconnected" : コンポーネントがまだ接続されていることを確認するために、RTCPeerConnectionオブジェクトの少なくとも
     //                  1つのコンポーネントに対して失敗したことを確認します。これは、"failed "よりも厳しいテストではなく、
     //                  断続的に発生し、信頼性の低いネットワークや一時的な切断中に自然に解決することがあります。問題が
@@ -253,25 +330,97 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
   };
 }
 
+function clickedSetOfferSDPandCreateAnswerSDP() {
+  console.log(
+    "UI Event : 'オファーSDPの準備とアンサーSDPの作成' button clicked."
+  );
+  if (globalRTCPeerConnection) {
+    // 既にコネクションオブジェクトあり
+    alert("Connection object already exists.");
+    return;
+  }
+  // OfferSDPを、テキストエリアから取得
+  let strOfferSDP = elementAnswerSideOfOfferSDP.value;
+  if (!strOfferSDP) {
+    // OfferSDPが空
+    alert("OfferSDP is empty. Please enter the OfferSDP.");
+    return;
+  }
+  // RTCPeerConnectionオブジェクトの作成
+  console.log("Call : createPeerConnection()");
+  let rtcPeerConnection = createPeerConnection(elementVideoLocal.srcObject);
+  globalRTCPeerConnection = rtcPeerConnection; // グローバル変数に設定
 
-// OfferSDPの作成
-function createOfferSDP(rtcPeerConnection) {
-  // OfferSDPの作成
-  console.log("Call : rtcPeerConnection.createOffer()");
-  rtcPeerConnection.createOffer()
-    .then((sessionDescription) => {
-      // 作成されたOfferSDPををLocalDescriptionに設定
-      console.log("Call : rtcPeerConnection.setLocalDescription()");
-      return rtcPeerConnection.setLocalDescription(sessionDescription);
-    })
-    .then(() => {
-      // Trickle ICEの場合は、初期SDPを相手に送る
-    })
-    .catch((error) => {
-      console.error("Error : ", error);
-    });
+  // OfferSDPの設定とAnswerSDPの作成
+  let sessionDescription = new RTCSessionDescription({
+    type: "offer",
+    sdp: strOfferSDP,
+  });
+  console.log("Call : setOfferSDPAndCreateAnswerSDP()");
+  setOfferSDPAndCreateAnswerSDP(rtcPeerConnection, sessionDescription);
 }
 
+// 「アンサーSDPを準備し、チャットをはじめる」ボタンを押すと呼ばれる関数
+function clickedSetAnswerSDPthenChatStarts() {
+  console.log(
+    "UI Event : 'アンサーSDPを準備し、チャットをはじめる' button clicked."
+  );
+
+  if (!globalRTCPeerConnection) {
+    // コネクションオブジェクトがない
+    alert("Connection object does not exist.");
+    return;
+  }
+
+  // アンサーSDPを、テキストエリアから取得
+  let strAnswerSDP = elementOfferSideOfAnswerSDP.value;
+  if (!strAnswerSDP) {
+    // AnswerSDPが空
+    alert("AnswerSDP is empty. Please enter the AnswerSDP.");
+    return;
+  }
+
+  // AnswerSDPの設定
+  let sessionDescription = new RTCSessionDescription({
+    type: "answer",
+    sdp: strAnswerSDP,
+  });
+  console.log("Call : setAnswerSDP()");
+  setAnswerSDP(globalRTCPeerConnection, sessionDescription);
+}
+
+// ICE gathering state change イベントが発生したときのイベントハンドラ
+// - このイベントは、ICE gathering stateが変化したときに発生する。
+//   言い換えれば、ICEエージェントがアクティブに候補者を収集しているかどうかが変化したときに発生する。
+//   see : https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/onicegatheringstatechange
+rtcPeerConnection.onicegatheringstatechange = () => {
+  console.log("Event : ICE gathering state change");
+  console.log("- ICE gathering state : ", rtcPeerConnection.iceGatheringState);
+
+  if ("complete" === rtcPeerConnection.iceGatheringState) {
+    // Vanilla ICEの場合は、ICE candidateを含んだOfferSDP/AnswerSDPを相手に送る
+    // Trickle ICEの場合は、何もしない
+    if ("offer" === rtcPeerConnection.localDescription.type) {
+      // Offer側のOfferSDP用のテキストエリアに貼付
+      console.log("- Set OfferSDP in textarea");
+      elementOfferSideOfOfferSDP.value = rtcPeerConnection.localDescription.sdp;
+      elementOfferSideOfOfferSDP.focus();
+      elementOfferSideOfOfferSDP.select();
+    } else if ("answer" === rtcPeerConnection.localDescription.type) {
+      // Answer側のAnswerSDP用のテキストエリアに貼付
+      console.log("- Set AnswerSDP in textarea");
+      elementAnswerSideOfAnswerSDP.value =
+        rtcPeerConnection.localDescription.sdp;
+      elementAnswerSideOfAnswerSDP.focus();
+      elementAnswerSideOfAnswerSDP.select();
+    } else {
+      console.error(
+        "Unexpected : Unknown localDescription.type. type = ",
+        rtcPeerConnection.localDescription.type
+      );
+    }
+  }
+};
 // HTML要素へのメディアストリームの設定（もしくは解除。および開始）
 // HTML要素は、「ローカルもしくはリモート」の「videoもしくはaudio」。
 // メディアストリームは、ローカルメディアストリームもしくはリモートメディアストリーム、もしくはnull。
