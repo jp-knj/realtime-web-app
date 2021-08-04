@@ -17,41 +17,11 @@
     <video id="videoLocal" width="320" height="240" style="border: 1px solid black;" autoplay></video>
     <video id="videoRemote" width="320" height="240" style="border: 1px solid black;" autoplay></video>
     <audio id="audioRemote" autoplay></audio>
-    <table border="1">
-        <tbody>
-            <tr>
-                <td></td>
-                <td>オファー側</td>
-                <td>アンサー側</td>
-            </tr>
-            <tr>
-                <td>オファーSDP</td>
-                <td>
-                    <button onclick="clickedCreateOfferSDP()">OfferSDPの作成</button>
-                    <br>
-                    <textarea id="offersideOfoffsersdp" rows="10" cols="40" readonly="readonly"></textarea>
-                </td>
-                <td>
-                    <br>
-                    <textarea id="answersideOfoffsersdp" rows="10" cols="40"></textarea>
-                </td>
-            </tr>
-            <tr>
-                <td>AnswerSDP</td>
-                <td>
-                    <br>
-                    <textarea id="offersideOfanswersdp" rows="10" cols="40"></textarea><br>
-		    <button onclick="clickedSetAnswerSDPthenChatStarts()">アンサーSDPの準備し、チャットをはじめる</button>
-                </td>
-                <td>
-                    <button onclick="clickedSetOfferSDPandCreateAnswerSDP()">オファーSDPの準備とアンサーSDPの作成</button>
-                    <br>
-                    <textarea id="answersideOfanswersdp" rows="10" cols="40" readonly="readonly"></textarea><br>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    <br />
+    <button onclick="clickedSendOfferSDP()">オファーSDPをおくる.</button>
+    
     <!-- Script -->
+    <script src="/socket.io/socket.io.js"></script>
     <script src="./client.js"></script>
 </body>
 </html>
