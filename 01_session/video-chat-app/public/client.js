@@ -44,15 +44,19 @@ function checkedCameraOrMicrophone() {
   let trackMicrophone_old = null;
   let bCamera_old = false;
   let bMicrophone_old = false;
+  let idCameraTrack_old = "";
+  let idMicrophoneTrack_old = "";
   let stream = elementVideoLocal.srcObject;
   if (stream) {
     trackCamera_old = stream.getVideoTracks()[0];
     if (trackCamera_old) {
       bCamera_old = true;
+      idCameraTrack_old = trackCamera_old.id;
     }
     trackMicrophone_old = stream.getAudioTracks()[0];
     if (trackMicrophone_old) {
       bMicrophone_old = true;
+      idMicrophoneTrack_old = trackMicrophone_old.id;
     }
   }
 
@@ -75,6 +79,22 @@ function checkedCameraOrMicrophone() {
     return;
   }
 
+  if (globalRTCPeerConnection) {
+    // コネクションオブジェクトに対してTrack削除を行う。
+    // （コネクションオブジェクトに対してTrack削除を行わなかった場合、使用していないstream通信が残る。）
+    let senders = globalRTCPeerConnection.getSenders();
+    senders.forEach((sender) => {
+      if (sender.track) {
+        if (
+          idCameraTrack_old === sender.track.id ||
+          idMicrophoneTrack_old === sender.track.id
+        ) {
+          globalRTCPeerConnection.removeTrack(sender);
+          // removeTrack()の結果として、通信相手に、streamの「removetrack」イベントが発生する。
+        }
+      }
+    });
+  }
   // 古いメディアストリームのトラックの停止（トラックの停止をせず、HTML要素のstreamの解除だけではカメラは停止しない（カメラ動作LEDは点いたまま））
   if (trackCamera_old) {
     console.log("Call : trackCamera_old.stop()");
@@ -93,9 +113,11 @@ function checkedCameraOrMicrophone() {
     return;
   }
 
-  // （チェックボックスの状態の変化があり、かつ、）カメラとマイクのどちらかもしくはどちらもOnの場合
+  // 古いメディアストリームのトラックの停止（トラックの停止をせず、HTML要素のstreamの解除だけではカメラは停止しな（・・・略・・・）
 
   // 自分のメディアストリームを取得する。
+  // - 古くは、navigator.getUserMedia() を使用していたが、廃止された。
+  //   現在は、navigator.mediaDevices.getUserMedia() が新たに用意され、これを使用する。
   console.log(
     "Call : navigator.mediaDevices.getUserMedia( video=%s, audio=%s )",
     bCamera_new,
@@ -104,17 +126,17 @@ function checkedCameraOrMicrophone() {
   navigator.mediaDevices
     .getUserMedia({ video: bCamera_new, audio: bMicrophone_new })
     .then((stream) => {
+      if (globalRTCPeerConnection) {
+        // コネクションオブジェクトに対してTrack追加を行う。
+        stream.getTracks().forEach((track) => {
+          globalRTCPeerConnection.addTrack(track, stream);
+          // addTrac()の結果として、「Negotiation needed」イベントが発生する。
+        });
+      }
+
       // HTML要素へのメディアストリームの設定
       console.log("Call : setStreamToElement( Video_Local, stream )");
       setStreamToElement(elementVideoLocal, stream);
-    })
-    .catch((error) => {
-      // メディアストリームの取得に失敗⇒古いメディアストリームのまま。チェックボックスの状態を戻す。
-      console.error("Error : ", error);
-      alert("Could not start Camera.");
-      elementCheckboxCamera.checked = false;
-      elementCheckboxMicrophone.checked = false;
-      return;
     });
 }
 
@@ -333,6 +355,18 @@ function setupDataChannelEventHandler(rtcPeerConnection) {
       // 受信メッセージをメッセージテキストエリアへ追加
       let strMessage = objData.data;
       elementReceivedMessage.value += strMessage + "\n";
+    } else if ("offer" === objData.type) {
+      // 受信したOfferSDPの設定とAnswerSDPの作成
+      console.log("Call : setOfferSDP_and_createAnswerSDP()");
+      setOfferSDPAndCreateAnswerSDP(rtcPeerConnection, objData.data);
+    } else if ("answer" === objData.type) {
+      // 受信したAnswerSDPの設定
+      console.log("Call : setAnswerSDP()");
+      setAnswerSDP(rtcPeerConnection, objData.data);
+    } else if ("candidate" === objData.type) {
+      // 受信したICE candidateの追加
+      console.log("Call : addCandidate()");
+      addCandidate(rtcPeerConnection, objData.data);
     }
   };
 }
@@ -350,12 +384,25 @@ function createOfferSDP(rtcPeerConnection) {
       return rtcPeerConnection.setLocalDescription(sessionDescription);
     })
     .then(() => {
-      // 初期OfferSDPをサーバーを経由して相手に送信
-      console.log("- Send OfferSDP to server");
-      globalSocket.emit("signaling", {
-        type: "offer",
-        data: rtcPeerConnection.localDescription,
-      });
+      if (!isDataChannelOpen(rtcPeerConnection)) {
+        // チャット前
+        // 初期OfferSDPをサーバーを経由して相手に送信
+        console.log("- Send OfferSDP to server");
+        globalSocket.emit("signaling", {
+          type: "offer",
+          data: rtcPeerConnection.localDescription,
+        });
+      } else {
+        // チャット中
+        // 初期OfferSDPをDataChannelを通して相手に直接送信
+        console.log("- Send OfferSDP through DataChannel");
+        rtcPeerConnection.datachannel.send(
+          JSON.stringify({
+            type: "offer",
+            data: rtcPeerConnection.localDescription,
+          })
+        );
+      }
     })
     .catch((error) => {
       console.error("Error : ", error);
@@ -377,12 +424,25 @@ function setOfferSDPAndCreateAnswerSDP(rtcPeerConnection, sessionDescription) {
       return rtcPeerConnection.setLocalDescription(sessionDescription);
     })
     .then(() => {
-      // 初期AnswerSDPをサーバーを経由して相手に送信
-      console.log("- Send AnswerSDP to server");
-      globalSocket.emit("signaling", {
-        type: "answer",
-        data: rtcPeerConnection.localDescription,
-      });
+      if (!isDataChannelOpen(rtcPeerConnection)) {
+        // チャット前
+        // 初期AnswerSDPをサーバーを経由して相手に送信
+        console.log("- Send AnswerSDP to server");
+        globalSocket.emit("signaling", {
+          type: "answer",
+          data: rtcPeerConnection.localDescription,
+        });
+      } else {
+        // チャット中
+        // 初期AnswerSDPをDataChannelを通して相手に直接送信
+        console.log("- Send AnswerSDP through DataChannel");
+        rtcPeerConnection.datachannel.send(
+          JSON.stringify({
+            type: "answer",
+            data: rtcPeerConnection.localDescription,
+          })
+        );
+      }
     })
     .catch((error) => {
       console.error("Error : ", error);
@@ -415,6 +475,17 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
   //   see : https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/onnegotiationneeded
   rtcPeerConnection.onnegotiationneeded = () => {
     console.log("Event : Negotiation needed");
+
+    if (!isDataChannelOpen(rtcPeerConnection)) {
+      // チャット前
+      // OfferSDPの作成は、ユーザーイベントから直接呼び出すので、
+      // Negotiation Neededイベントは無視する。
+    } else {
+      // チャット中
+      // OfferSDPを作成し、DataChannelを通して相手に直接送信
+      console.log("Call : createOfferSDP()");
+      createOfferSDP(rtcPeerConnection);
+    }
   };
 
   // ICE candidate イベントが発生したときのイベントハンドラ
@@ -428,12 +499,22 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
     if (event.candidate) {
       // ICE candidateがある
       console.log("- ICE candidate : ", event.candidate);
-      // // ICE candidateをサーバーを経由して相手に送信
-      console.log("- Send ICE candidate to server");
-      globalSocket.emit("signaling", {
-        type: "candidate",
-        data: event.candidate,
-      });
+      if (!isDataChannelOpen(rtcPeerConnection)) {
+        // チャット前
+        // ICE candidateをサーバーを経由して相手に送信
+        console.log("- Send ICE candidate to server");
+        globalSocket.emit("signaling", {
+          type: "candidate",
+          data: event.candidate,
+        });
+      } else {
+        // チャット中
+        // ICE candidateをDataChannelを通して相手に直接送信
+        console.log("- Send ICE candidate through DataChannel");
+        rtcPeerConnection.datachannel.send(
+          JSON.stringify({ type: "candidate", data: event.candidate })
+        );
+      }
     } else {
       // ICE candiateがない = ICE candidate の収集終了。
       console.log("- ICE candidate : empty");
@@ -546,6 +627,28 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
     } else {
       console.error("Unexpected : Unknown track kind : ", track.kind);
     }
+    // 相手のメディアストリームがRTCPeerConnectionから削除されたときのイベントハンドラ
+    // - 相手の RTCPeerConnection.removeTrack( sender );
+    //   の結果として、streamの「removetrack」イベントが発生する。
+    // - 古くは、rtcPeerConnection.onremovetrack に設定していたが、廃止された。
+    //   現在は、stream.onremovetrack に設定する。
+    stream.onremovetrack = (evt) => {
+      console.log("Stream Event : remove track");
+      console.log("- stream", stream);
+      console.log("- track", evt.track);
+
+      // HTML要素のメディアストリームの解除
+      let trackRemove = evt.track;
+      if ("video" === trackRemove.kind) {
+        console.log("Call : setStreamToElement( Video_Remote, null )");
+        setStreamToElement(elementVideoRemote, null);
+      } else if ("audio" === trackRemove.kind) {
+        console.log("Call : setStreamToElement( Audio_Remote, null )");
+        setStreamToElement(elementAudioRemote, null);
+      } else {
+        console.error("Unexpected : Unknown track kind : ", trackRemove.kind);
+      }
+    };
   };
 
   // Data channel イベントが発生したときのイベントハンドラ
