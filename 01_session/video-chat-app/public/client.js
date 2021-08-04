@@ -18,9 +18,14 @@ const elementAnswerSideOfAnswerSDP = document.getElementById(
   "answersideOfanswersdp"
 );
 
-let globalRTCPeerConnection = null;
-
+// ローカルのメディア要素
 const elementVideoLocal = document.getElementById("videoLocal");
+
+// リモートのメディア要素
+const elementVideoRemote = document.getElementById("videoRemote");
+const elementAudioRemote = document.getElementById("audioRemote");
+
+let globalRTCPeerConnection = null;
 
 // UI
 // カメラとマイクのOn/Offのチェックボックスを押すと呼ばれる関数
@@ -327,6 +332,19 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
     console.log("Event : Track");
     console.log("- stream", event.streams[0]);
     console.log("- track", event.track);
+
+    // HTML要素へのリモートメディアストリームの設定
+    let stream = event.streams[0];
+    let track = event.track;
+    if ("video" === track.kind) {
+      console.log("Call : setStreamToElement( VideoRemote, stream )");
+      setStreamToElement(elementVideoRemote, stream);
+    } else if ("audio" === track.kind) {
+      console.log("Call : setStreamToElement( AudioRemote, stream )");
+      setStreamToElement(elementAudioRemote, stream);
+    } else {
+      console.error("Unexpected : Unknown track kind : ", track.kind);
+    }
   };
 }
 
