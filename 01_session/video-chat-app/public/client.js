@@ -205,27 +205,31 @@ globalSocket.on("signaling", (objData) => {
       alert("Connection object already exists.");
       return;
     }
-
     // RTCPeerConnectionオブジェクトの作成
     console.log("Call : createPeerConnection()");
     let rtcPeerConnection = createPeerConnection(elementVideoLocal.srcObject);
     globalRTCPeerConnection = rtcPeerConnection; // グローバル変数に設定
-
     // OfferSDPの設定とAnswerSDPの作成
     console.log("Call : setOfferSDPandCreateAnswerSDP()");
     setOfferSDPAndCreateAnswerSDP(rtcPeerConnection, objData.data); // 受信したSDPオブジェクトを渡す。
   } else if ("answer" === objData.type) {
-    // 設定するAnswerSDPとして、テキストエリアのデータではなく、受信したデータを使用する。
-
     if (!globalRTCPeerConnection) {
       // コネクションオブジェクトがない
       alert("Connection object does not exist.");
       return;
     }
-
     // AnswerSDPの設定
     console.log("Call : setAnswerSDP()");
     setAnswerSDP(globalRTCPeerConnection, objData.data); // 受信したSDPオブジェクトを渡す。
+  } else if ("candidate" === objData.type) {
+    if (!globalRTCPeerConnection) {
+      // コネクションオブジェクトがない
+      alert("Connection object does not exist.");
+      return;
+    }
+    // ICE candidateの追加
+    console.log("Call : addCandidate()");
+    addCandidate(globalRTCPeerConnection, objData.data); // 受信したICE candidateの追加
   } else {
     console.error("Unexpected : Socket Event : signaling");
   }
@@ -244,7 +248,12 @@ function createOfferSDP(rtcPeerConnection) {
       return rtcPeerConnection.setLocalDescription(sessionDescription);
     })
     .then(() => {
-      // Trickle ICEの場合は、初期SDPを相手に送る
+      // 初期OfferSDPをサーバーを経由して相手に送信
+      console.log("- Send OfferSDP to server");
+      globalSocket.emit("signaling", {
+        type: "offer",
+        data: rtcPeerConnection.localDescription,
+      });
     })
     .catch((error) => {
       console.error("Error : ", error);
@@ -266,8 +275,12 @@ function setOfferSDPAndCreateAnswerSDP(rtcPeerConnection, sessionDescription) {
       return rtcPeerConnection.setLocalDescription(sessionDescription);
     })
     .then(() => {
-      // Vanilla ICEの場合は、まだSDPを相手に送らない
-      // Trickle ICEの場合は、初期SDPを相手に送る
+      // 初期AnswerSDPをサーバーを経由して相手に送信
+      console.log("- Send AnswerSDP to server");
+      globalSocket.emit("signaling", {
+        type: "answer",
+        data: rtcPeerConnection.localDescription,
+      });
     })
     .catch((error) => {
       console.error("Error : ", error);
@@ -278,6 +291,13 @@ function setOfferSDPAndCreateAnswerSDP(rtcPeerConnection, sessionDescription) {
 function setAnswerSDP(rtcPeerConnection, sessionDescription) {
   console.log("Call : rtcPeerConnection.setRemoteDescription()");
   rtcPeerConnection.setRemoteDescription(sessionDescription).catch((error) => {
+    console.error("Error : ", error);
+  });
+}
+
+function addCandidate(rtcPeerConnection, candidate) {
+  console.log("Call : rtcPeerConnection.addIceCandidate()");
+  rtcPeerConnection.addIceCandidate(candidate).catch((error) => {
     console.error("Error : ", error);
   });
 }
@@ -306,7 +326,12 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
     if (event.candidate) {
       // ICE candidateがある
       console.log("- ICE candidate : ", event.candidate);
-      // Trickle ICEの場合は、ICE candidateを相手に送る
+      // // ICE candidateをサーバーを経由して相手に送信
+      console.log("- Send ICE candidate to server");
+      globalSocket.emit("signaling", {
+        type: "candidate",
+        data: event.candidate,
+      });
     } else {
       // ICE candiateがない = ICE candidate の収集終了。
       console.log("- ICE candidate : empty");
@@ -333,22 +358,9 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
       "- ICE gathering state : ",
       rtcPeerConnection.iceGatheringState
     );
-
     if ("complete" === rtcPeerConnection.iceGatheringState) {
       if ("offer" === rtcPeerConnection.localDescription.type) {
-        // OfferSDPをサーバーに送信
-        console.log("- Send OfferSDP to server");
-        globalSocket.emit("signaling", {
-          type: "offer",
-          data: rtcPeerConnection.localDescription,
-        });
       } else if ("answer" === rtcPeerConnection.localDescription.type) {
-        // AnswerSDPをサーバーに送信
-        console.log("- Send AnswerSDP to server");
-        globalSocket.emit("signaling", {
-          type: "answer",
-          data: rtcPeerConnection.localDescription,
-        });
       } else {
         console.error(
           "Unexpected : Unknown localDescription.type. type = ",
