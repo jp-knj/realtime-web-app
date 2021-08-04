@@ -25,6 +25,9 @@ const elementVideoLocal = document.getElementById("videoLocal");
 const elementVideoRemote = document.getElementById("videoRemote");
 const elementAudioRemote = document.getElementById("audioRemote");
 
+// クライアントからサーバーへの接続要求
+const globalSocket = io.connect();
+
 let globalRTCPeerConnection = null;
 
 // UI
@@ -111,21 +114,47 @@ function checkedCameraOrMicrophone() {
     });
 }
 
-function clickedCreateOfferSDP() {
-  console.log("UI Event : 'Create Offer SDP.' clicked.");
+function clickedSendOfferSDP() {
+  console.log("UI Event : 'オファーSDPをおくる.' button clicked.");
+
   if (globalRTCPeerConnection) {
     // 既にコネクションオブジェクトあり
     alert("Connection object already exists.");
     return;
   }
 
-  // コンソールに出力する(RTCPeerConnectionオブジェクトの作成する関数を呼び出し)
+  // RTCPeerConnectionオブジェクトの作成
   console.log("Call : createPeerConnection()");
   let rtcPeerConnection = createPeerConnection(elementVideoLocal.srcObject);
   globalRTCPeerConnection = rtcPeerConnection; // グローバル変数に設定
 
-  // RTCPeerConnectionオブジェクトの作成する関数を呼び出し
+  // OfferSDPの作成
   createOfferSDP(rtcPeerConnection);
+}
+
+function clickedLeaveChat() {
+  console.log("UI Event :'チャットからはなれる' button clicked.");
+
+  if (globalRTCPeerConnection) {
+    console.log("Call : endPeerConnection()");
+    endPeerConnection(globalRTCPeerConnection);
+  }
+}
+
+// コネクションの終了処理
+function endPeerConnection(rtcPeerConnection) {
+  // リモート映像の停止
+  console.log("Call : setStreamToElement( VideoRemote, null )");
+  setStreamToElement(elementVideoRemote, null);
+  // リモート音声の停止
+  console.log("Call : setStreamToElement( AudioRemote, null )");
+  setStreamToElement(elementAudioRemote, null);
+
+  // グローバル変数のクリア
+  globalRTCPeerConnection = null;
+
+  // ピアコネクションの終了
+  rtcPeerConnection.close();
 }
 
 // RTCPeerConnectionオブジェクトの作成する関数
@@ -148,8 +177,55 @@ function createPeerConnection(stream) {
   return rtcPeerConnection;
 }
 
-// RTCPeerConnection関連
+// Socket.IO
+// 接続時の処理
+// ・サーバーとクライアントの接続が確立すると、
+// 　サーバー側で、"connection"イベント、クライアント側で、"connect"イベントが発生する
+globalSocket.on("connect", () => {
+  console.log("Socket Event : connect");
+});
 
+// サーバーからのメッセージ受信に対する処理
+// ・サーバー側のメッセージ拡散時の「io.broadcast.emit( "signaling", objData );」に対する処理
+globalSocket.on("signaling", (objData) => {
+  console.log("Socket Event : signaling");
+  console.log("- type : ", objData.type);
+  console.log("- data : ", objData.data);
+
+  if ("offer" === objData.type) {
+    // 設定するOffserSDPとして、テキストエリアのデータではなく、受信したデータを使用する。
+    if (globalRTCPeerConnection) {
+      // 既にコネクションオブジェクトあり
+      alert("Connection object already exists.");
+      return;
+    }
+
+    // RTCPeerConnectionオブジェクトの作成
+    console.log("Call : createPeerConnection()");
+    let rtcPeerConnection = createPeerConnection(elementVideoLocal.srcObject);
+    globalRTCPeerConnection = rtcPeerConnection; // グローバル変数に設定
+
+    // OfferSDPの設定とAnswerSDPの作成
+    console.log("Call : setOfferSDPandCreateAnswerSDP()");
+    setOfferSDPAndCreateAnswerSDP(rtcPeerConnection, objData.data); // 受信したSDPオブジェクトを渡す。
+  } else if ("answer" === objData.type) {
+    // 設定するAnswerSDPとして、テキストエリアのデータではなく、受信したデータを使用する。
+
+    if (!globalRTCPeerConnection) {
+      // コネクションオブジェクトがない
+      alert("Connection object does not exist.");
+      return;
+    }
+
+    // AnswerSDPの設定
+    console.log("Call : setAnswerSDP()");
+    setAnswerSDP(globalRTCPeerConnection, objData.data); // 受信したSDPオブジェクトを渡す。
+  } else {
+    console.error("Unexpected : Socket Event : signaling");
+  }
+});
+
+// RTCPeerConnection関連
 // OfferSDPの作成
 function createOfferSDP(rtcPeerConnection) {
   // OfferSDPの作成
@@ -253,23 +329,20 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
     );
 
     if ("complete" === rtcPeerConnection.iceGatheringState) {
-      // Vanilla ICEの場合は、ICE candidateを含んだOfferSDP/AnswerSDPを相手に送る
-      // Trickle ICEの場合は、何もしない
-
       if ("offer" === rtcPeerConnection.localDescription.type) {
-        // Offer側のOfferSDP用のテキストエリアに貼付
-        console.log("- Set OfferSDP in textarea");
-        elementOfferSideOfOfferSDP.value =
-          rtcPeerConnection.localDescription.sdp;
-        elementOfferSideOfOfferSDP.focus();
-        elementOfferSideOfOfferSDP.select();
+        // OfferSDPをサーバーに送信
+        console.log("- Send OfferSDP to server");
+        globalSocket.emit("signaling", {
+          type: "offer",
+          data: rtcPeerConnection.localDescription,
+        });
       } else if ("answer" === rtcPeerConnection.localDescription.type) {
-        // Answer側のAnswerSDP用のテキストエリアに貼付
-        console.log("- Set AnswerSDP in textarea");
-        elementAnswerSideOfAnswerSDP.value =
-          rtcPeerConnection.localDescription.sdp;
-        elementAnswerSideOfAnswerSDP.focus();
-        elementAnswerSideOfAnswerSDP.select();
+        // AnswerSDPをサーバーに送信
+        console.log("- Send AnswerSDP to server");
+        globalSocket.emit("signaling", {
+          type: "answer",
+          data: rtcPeerConnection.localDescription,
+        });
       } else {
         console.error(
           "Unexpected : Unknown localDescription.type. type = ",
@@ -321,6 +394,14 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
     //                  他のトランスポートのどれも「failed」、「connecting」、「checking」の状態ではない。
     // "failed"       : 接続の1つ以上のICEトランスポートが「失敗」状態になっている。
     // see : https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/connectionState
+
+    if ("failed" === rtcPeerConnection.connectionState) {
+      // 「ビデオチャット相手との通信が切断」が「しばらく」続き、通信が復帰しないとき、Connection state「failed」となる。
+      // - 「ビデオチャット相手との通信が切断」になると「すぐに」Connection state「failed」となるわけではない。
+      // - 相手のチャット離脱後、速やかにコネクション終了処理を行うためには、離脱側からチャット離脱メッセージを送信し、受信側でコネクション終了処理を行うようにする。
+      console.log("Call : endPeerConnection()");
+      endPeerConnection(rtcPeerConnection);
+    }
   };
 
   // Track イベントが発生したときのイベントハンドラ
@@ -378,35 +459,6 @@ function clickedSetOfferSDPandCreateAnswerSDP() {
   setOfferSDPAndCreateAnswerSDP(rtcPeerConnection, sessionDescription);
 }
 
-// 「アンサーSDPを準備し、チャットをはじめる」ボタンを押すと呼ばれる関数
-function clickedSetAnswerSDPthenChatStarts() {
-  console.log(
-    "UI Event : 'アンサーSDPを準備し、チャットをはじめる' button clicked."
-  );
-
-  if (!globalRTCPeerConnection) {
-    // コネクションオブジェクトがない
-    alert("Connection object does not exist.");
-    return;
-  }
-
-  // アンサーSDPを、テキストエリアから取得
-  let strAnswerSDP = elementOfferSideOfAnswerSDP.value;
-  if (!strAnswerSDP) {
-    // AnswerSDPが空
-    alert("AnswerSDP is empty. Please enter the AnswerSDP.");
-    return;
-  }
-
-  // AnswerSDPの設定
-  let sessionDescription = new RTCSessionDescription({
-    type: "answer",
-    sdp: strAnswerSDP,
-  });
-  console.log("Call : setAnswerSDP()");
-  setAnswerSDP(globalRTCPeerConnection, sessionDescription);
-}
-
 // ICE gathering state change イベントが発生したときのイベントハンドラ
 // - このイベントは、ICE gathering stateが変化したときに発生する。
 //   言い換えれば、ICEエージェントがアクティブに候補者を収集しているかどうかが変化したときに発生する。
@@ -419,18 +471,7 @@ rtcPeerConnection.onicegatheringstatechange = () => {
     // Vanilla ICEの場合は、ICE candidateを含んだOfferSDP/AnswerSDPを相手に送る
     // Trickle ICEの場合は、何もしない
     if ("offer" === rtcPeerConnection.localDescription.type) {
-      // Offer側のOfferSDP用のテキストエリアに貼付
-      console.log("- Set OfferSDP in textarea");
-      elementOfferSideOfOfferSDP.value = rtcPeerConnection.localDescription.sdp;
-      elementOfferSideOfOfferSDP.focus();
-      elementOfferSideOfOfferSDP.select();
     } else if ("answer" === rtcPeerConnection.localDescription.type) {
-      // Answer側のAnswerSDP用のテキストエリアに貼付
-      console.log("- Set AnswerSDP in textarea");
-      elementAnswerSideOfAnswerSDP.value =
-        rtcPeerConnection.localDescription.sdp;
-      elementAnswerSideOfAnswerSDP.focus();
-      elementAnswerSideOfAnswerSDP.select();
     } else {
       console.error(
         "Unexpected : Unknown localDescription.type. type = ",
@@ -439,6 +480,7 @@ rtcPeerConnection.onicegatheringstatechange = () => {
     }
   }
 };
+
 // HTML要素へのメディアストリームの設定（もしくは解除。および開始）
 // HTML要素は、「ローカルもしくはリモート」の「videoもしくはaudio」。
 // メディアストリームは、ローカルメディアストリームもしくはリモートメディアストリーム、もしくはnull。
