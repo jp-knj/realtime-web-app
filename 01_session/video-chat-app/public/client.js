@@ -685,6 +685,15 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
     // DataChannelオブジェクトのイベントハンドラの構築
     console.log("Call : setupDataChannelEventHandler()");
     setupDataChannelEventHandler(rtcPeerConnection);
+
+    // オファーをされた側として、OfferSDPを作成し、DataChannelを通して相手に直接送信
+    // （オファーした側でカメラや（orマイク）をOnにしなかった場合、
+    //   オファーされた側でカメラ（orマイク）をOnにしても、
+    //   カメラ映像（orマイク音声）の通信ストリームは作成されず、カメラ映像（マイク音声）は相手に送信されない。
+    //   オファーされた側として、OfferSDPを作成、送信することで、
+    //   オファーした側、オファーされた側、双方で必要な通信ストリームが整う。）
+    console.log("Call : createOfferSDP()");
+    createOfferSDP(rtcPeerConnection);
   };
 }
 
