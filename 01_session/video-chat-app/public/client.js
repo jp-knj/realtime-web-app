@@ -35,6 +35,17 @@ const globalSocket = io.connect();
 let globalRTCPeerConnection = null;
 
 // UI
+// // ページがunloadされる（閉じる、再読み込み、別ページへ移動）直前に呼ばれる関数
+window.addEventListener("beforeunload", (event) => {
+  event.preventDefault(); // 既定の動作のキャンセル
+
+  clickedLeaveChat(); // チャットからの離脱
+  globalSocket.disconnect(); // Socket.ioによるサーバーとの接続の切断
+
+  e.returnValue = ""; // Chrome では returnValue を設定する必要がある
+  return ""; // Chrome 以外では、return を設定する必要がある
+});
+
 // カメラとマイクのOn/Offのチェックボックスを押すと呼ばれる関数
 function checkedCameraOrMicrophone() {
   console.log("UI Event : Camera/Microphone checked.");
@@ -199,6 +210,14 @@ function clickedLeaveChat() {
   console.log("UI Event :'チャットからはなれる' button clicked.");
 
   if (globalRTCPeerConnection) {
+    if (isDataChannelOpen(globalRTCPeerConnection)) {
+      // チャット中
+      // チャット離脱の通知をDataChannelを通して相手に直接送信
+      console.log("- Send 'leave' through DataChannel");
+      globalRTCPeerConnection.datachannel.send(
+        JSON.stringify({ type: "leave", data: "" })
+      );
+    }
     console.log("Call : endPeerConnection()");
     endPeerConnection(globalRTCPeerConnection);
   }
@@ -367,6 +386,9 @@ function setupDataChannelEventHandler(rtcPeerConnection) {
       // 受信したICE candidateの追加
       console.log("Call : addCandidate()");
       addCandidate(rtcPeerConnection, objData.data);
+    } else if ("leave" === objData.type) {
+      console.log("Call : endPeerConnection()");
+      endPeerConnection(rtcPeerConnection);
     }
   };
 }
