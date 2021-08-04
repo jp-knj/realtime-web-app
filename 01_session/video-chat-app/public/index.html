@@ -18,8 +18,12 @@
     <video id="videoRemote" width="320" height="240" style="border: 1px solid black;" autoplay></video>
     <audio id="audioRemote" autoplay></audio>
     <br />
+    <textarea id="receivedMessage" rows="10" cols="60" readonly="readonly"></textarea>
+    <form action="" onsubmit="handleSendMessage(); return false;">
+        <input type="text" id="sendMessage" size="40" /><input type="submit" value="メッセージをおくる" />
+    </form>
+    <br />
     <button onclick="clickedSendOfferSDP()">オファーSDPをおくる.</button>
-    
     <br />
     <button onclick="clickedLeaveChat()">チャットからはなれる</button>
     <!-- Script -->

@@ -25,6 +25,10 @@ const elementVideoLocal = document.getElementById("videoLocal");
 const elementVideoRemote = document.getElementById("videoRemote");
 const elementAudioRemote = document.getElementById("audioRemote");
 
+// メッセージのインプットとテキストエリア
+const elementSendMessage = document.getElementById("sendMessage");
+const elementReceivedMessage = document.getElementById("receivedMessage");
+
 // クライアントからサーバーへの接続要求
 const globalSocket = io.connect();
 
@@ -128,8 +132,45 @@ function clickedSendOfferSDP() {
   let rtcPeerConnection = createPeerConnection(elementVideoLocal.srcObject);
   globalRTCPeerConnection = rtcPeerConnection; // グローバル変数に設定
 
+  // DataChannelの作成
+  let datachannel = rtcPeerConnection.createDataChannel("my datachannel");
+  // DataChannelオブジェクトをRTCPeerConnectionオブジェクトのメンバーに追加。
+  rtcPeerConnection.datachannel = datachannel;
+  // DataChannelオブジェクトのイベントハンドラの構築
+  console.log("Call : setupDataChannelEventHandler()");
+  setupDataChannelEventHandler(rtcPeerConnection);
+
   // OfferSDPの作成
   createOfferSDP(rtcPeerConnection);
+}
+
+// メッセージをおくる ボタンを押すと呼ばれる関数
+function handleSendMessage() {
+  console.log("UI Event : 'メッセージをおくる' button clicked.");
+
+  if (!globalRTCPeerConnection) {
+    // コネクションオブジェクトがない
+    alert("Connection object does not exist.");
+    return;
+  }
+  if (!isDataChannelOpen(globalRTCPeerConnection)) {
+    // DataChannelオブジェクトが開いていない
+    alert("Datachannel is not open.");
+    return;
+  }
+
+  if (!elementSendMessage.value) {
+    alert("Message for send is empty. Please enter the message for send.");
+    return;
+  }
+
+  // メッセージをDataChannelを通して相手に直接送信
+  console.log("- Send Message through DataChannel");
+  globalRTCPeerConnection.datachannel.send(
+    JSON.stringify({ type: "message", data: elementSendMessage.value })
+  );
+  elementReceivedMessage.value += elementSendMessage.value + "\n"; // 一番下に追加
+  elementSendMessage.value = "";
 }
 
 function clickedLeaveChat() {
@@ -151,6 +192,28 @@ function endPeerConnection(rtcPeerConnection) {
   setStreamToElement(elementAudioRemote, null);
 
   // グローバル変数のクリア
+  globalRTCPeerConnection = null;
+
+  // ピアコネクションの終了
+  rtcPeerConnection.close();
+}
+
+// コネクションの終了処理
+function endPeerConnection(rtcPeerConnection) {
+  // リモート映像の停止
+  console.log("Call : setStreamToElement( VideoRemote, null )");
+  setStreamToElement(elementVideoRemote, null);
+  // リモート音声の停止
+  console.log("Call : setStreamToElement( AudioRemote, null )");
+  setStreamToElement(elementAudioRemote, null);
+
+  // DataChannelの終了
+  if ("datachannel" in rtcPeerConnection) {
+    rtcPeerConnection.datachannel.close();
+    rtcPeerConnection.datachannel = null;
+  }
+
+  // グローバル変数から解放
   globalRTCPeerConnection = null;
 
   // ピアコネクションの終了
@@ -234,6 +297,45 @@ globalSocket.on("signaling", (objData) => {
     console.error("Unexpected : Socket Event : signaling");
   }
 });
+
+// DataChannelが開いているか
+function isDataChannelOpen(rtcPeerConnection) {
+  if (!("datachannel" in rtcPeerConnection)) {
+    // datachannelメンバーが存在しない
+    return false;
+  }
+  if (!rtcPeerConnection.datachannel) {
+    // datachannelメンバーがnull
+    return false;
+  }
+  if ("open" !== rtcPeerConnection.datachannel.readyState) {
+    // datachannelメンバーはあるが、"open"でない。
+    return false;
+  }
+  // DataCchannelが開いている
+  return true;
+}
+// DataChannelオブジェクトのイベントハンドラの構築
+function setupDataChannelEventHandler(rtcPeerConnection) {
+  if (!("datachannel" in rtcPeerConnection)) {
+    console.error("Unexpected : DataChannel does not exist.");
+    return;
+  }
+
+  // message イベントが発生したときのイベントハンドラ
+  rtcPeerConnection.datachannel.onmessage = (event) => {
+    console.log("DataChannel Event : message");
+    let objData = JSON.parse(event.data);
+    console.log("- type : ", objData.type);
+    console.log("- data : ", objData.data);
+
+    if ("message" === objData.type) {
+      // 受信メッセージをメッセージテキストエリアへ追加
+      let strMessage = objData.data;
+      elementReceivedMessage.value += strMessage + "\n";
+    }
+  };
+}
 
 // RTCPeerConnection関連
 // OfferSDPの作成
@@ -444,6 +546,20 @@ function setupRTCPeerConnectionEventHandler(rtcPeerConnection) {
     } else {
       console.error("Unexpected : Unknown track kind : ", track.kind);
     }
+  };
+
+  // Data channel イベントが発生したときのイベントハンドラ
+  // - このイベントは、createDataChannel() を呼び出すリモートピアによって
+  //   RTCDataChannelが接続に追加されたときに送信されます。
+  //   see : https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/ondatachannel
+  rtcPeerConnection.ondatachannel = (event) => {
+    console.log("Event : Data channel");
+
+    // DataChannelオブジェクトをRTCPeerConnectionオブジェクトのメンバーに追加。
+    rtcPeerConnection.datachannel = event.channel;
+    // DataChannelオブジェクトのイベントハンドラの構築
+    console.log("Call : setupDataChannelEventHandler()");
+    setupDataChannelEventHandler(rtcPeerConnection);
   };
 }
 
