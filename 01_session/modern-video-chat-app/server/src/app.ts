@@ -1,6 +1,5 @@
 import express from "express";
 import { createServer } from "http";
-import { Server } from "socket.io";
 import config from "config";
 import logger from "./utils/logger";
 import { version } from "../package.json";
