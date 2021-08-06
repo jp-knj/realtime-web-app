@@ -1,9 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 
+import ToggleCamera from "../components/ToggleCamera";
+
 const Home: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [camera, setCamera] = useState<boolean>(false);
+  const cameraSetter = () => setCamera(!camera);
   const [mute, setMute] = useState<boolean>(false);
+
   useEffect(() => {
     navigator.mediaDevices
       .getUserMedia({
@@ -37,13 +41,7 @@ const Home: React.FC = () => {
   return (
     <>
       <h1>ビデオチャット</h1>
-      <button
-        onClick={() => {
-          setCamera(!camera);
-        }}
-      >
-        カメラ
-      </button>
+      <ToggleCamera mute={camera} setter={cameraSetter} />
       <button
         onClick={() => {
           setMute(!mute);
