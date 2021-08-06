@@ -5,7 +5,7 @@ type Props = {
   setter: Function;
 };
 
-const ToggleCamera: React.FC<Props> = ({ mute, setter }) => {
+const ToggleMic: React.FC<Props> = ({ mute, setter }) => {
   let icon;
   if (mute) {
     icon = "Off";
@@ -15,7 +15,6 @@ const ToggleCamera: React.FC<Props> = ({ mute, setter }) => {
   const handleOnClick = () => {
     setter(!mute);
   };
-  return <button onClick={handleOnClick}>カメラ:{icon}</button>;
+  return <button onClick={handleOnClick}>マイク:{icon}</button>;
 };
-
-export default ToggleCamera;
+export default ToggleMic;

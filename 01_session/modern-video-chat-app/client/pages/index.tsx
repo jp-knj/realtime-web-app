@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 
 import ToggleCamera from "../components/ToggleCamera";
+import ToggleMic from "../components/ToggleMic";
 
 const Home: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [camera, setCamera] = useState<boolean>(false);
   const cameraSetter = () => setCamera(!camera);
   const [mute, setMute] = useState<boolean>(false);
+  const micSetter = () => setMute(!mute);
 
   useEffect(() => {
     navigator.mediaDevices
@@ -42,13 +44,7 @@ const Home: React.FC = () => {
     <>
       <h1>ビデオチャット</h1>
       <ToggleCamera mute={camera} setter={cameraSetter} />
-      <button
-        onClick={() => {
-          setMute(!mute);
-        }}
-      >
-        マイク
-      </button>
+      <ToggleMic mute={mute} setter={micSetter} />
       <br />
       <video
         ref={videoRef}
