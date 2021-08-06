@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 
 import ToggleCamera from "../components/ToggleCamera";
 import ToggleMic from "../components/ToggleMic";
+import Signaling from "../components/Signaling";
 
 const Home: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -55,6 +56,7 @@ const Home: React.FC = () => {
         width="320"
         height="240"
       ></video>
+      <Signaling />
     </>
   );
 };
