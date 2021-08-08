@@ -130,6 +130,9 @@ const Session2: React.FC = () => {
   const onClickHangUp = () => {
     console.log("UI Event: hangup btn clicked");
     setIsCalling(false);
+    if (localPeerConnectionRef.current) localPeerConnectionRef.current.close();
+    if (remotePeerConnectionRef.current)
+      remotePeerConnectionRef.current.close();
   };
   return (
     <div>
