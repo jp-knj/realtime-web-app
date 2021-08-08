@@ -134,6 +134,7 @@ const Session2: React.FC = () => {
     if (remotePeerConnectionRef.current)
       remotePeerConnectionRef.current.close();
   };
+
   return (
     <div>
       <h2>Session 2</h2>
@@ -151,9 +152,15 @@ const Session2: React.FC = () => {
         playsInline
       />
       <div>
-        <button onClick={onClickStart}>Start</button>
-        <button onClick={onClickCall}>Call</button>
-        <button onClick={onClickHangUp}>Hang Up</button>
+        <button onClick={onClickStart} disabled={isStarted}>
+          Start
+        </button>
+        <button onClick={onClickCall} disabled={!isStarted || isCalling}>
+          Call
+        </button>
+        <button onClick={onClickHangUp} disabled={!isCalling}>
+          Hang Up
+        </button>
       </div>
     </div>
   );
