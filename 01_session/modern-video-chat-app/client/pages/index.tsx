@@ -1,62 +1,91 @@
 import React, { useEffect, useRef, useState } from "react";
 
-import ToggleCamera from "../components/ToggleCamera";
-import ToggleMic from "../components/ToggleMic";
-import Signaling from "../components/Signaling";
-
 const Home: React.FC = () => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [camera, setCamera] = useState<boolean>(false);
-  const cameraSetter = () => setCamera(!camera);
-  const [mute, setMute] = useState<boolean>(false);
-  const micSetter = () => setMute(!mute);
+  const constraints = {
+    audio: true,
+    video: true,
+  };
 
+  const [camera, setCamera] = useState(false);
+  const [mic, setMic] = useState(false);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+
+  //画面がロードされたタイミングでwebカメラに接続
   useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({
-        audio: false,
-        video: {
-          width: 600,
-          height: 400,
-        },
-      })
-      .then((stream) => {
-        videoRef.current!.srcObject = stream;
-      });
+    navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+      localVideoRef.current!.srcObject = stream;
+    });
   }, []);
 
-  //カメラのon/offボタンの実装
+  // on/offボタンの実装
   useEffect(() => {
     navigator.mediaDevices
-      .getUserMedia({ audio: true, video: true })
+      .getUserMedia({ audio: mic ? false : true, video: true })
       .then((stream) => {
-        videoRef.current!.srcObject = camera ? null : stream;
+        localVideoRef.current!.srcObject = camera ? null : stream;
       });
-  }, [camera]);
+  }, [mic, camera]);
 
-  //マイクのon/offボタンの実装
-  useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({ audio: mute ? false : true, video: true })
-      .then(() => {});
-    console.log(Audio);
-  }, [mute]);
   return (
     <>
       <h1>ビデオチャット</h1>
-      <ToggleCamera mute={camera} setter={cameraSetter} />
-      <ToggleMic mute={mute} setter={micSetter} />
+      <button
+        onClick={() => {
+          setCamera(!camera);
+        }}
+      >
+        カメラ
+      </button>
+      <button
+        onClick={() => {
+          setMic(!mic);
+        }}
+      >
+        マイク
+      </button>
       <br />
       <video
-        ref={videoRef}
-        id="local-video"
+        ref={localVideoRef}
+        style={{ border: "1px solid black" }}
         autoPlay
         playsInline
-        muted
-        width="320"
-        height="240"
       ></video>
-      <Signaling />
+      <table>
+        <tbody>
+          <tr>
+            <td></td>
+            <td>オファー側</td>
+            <td>アンサー側</td>
+          </tr>
+          <tr>
+            <td>オファーSDP</td>
+            <td>
+              <button>オファーSDP作成</button>
+              <br />
+              <textarea></textarea>
+            </td>
+            <td>
+              <br />
+              <textarea></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td>アンサーSDP</td>
+            <td>
+              <br />
+              <textarea></textarea>
+              <br />
+              <button>アンサーSDPの準備 と チャット</button>
+            </td>
+            <td>
+              <button>オファーSDPの準備 と アンサーSDP作成.</button>
+              <br />
+              <textarea></textarea>
+              <br />
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </>
   );
 };
