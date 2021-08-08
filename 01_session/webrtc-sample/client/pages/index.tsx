@@ -18,6 +18,11 @@ export default function Home() {
           <a>session3</a>
         </Link>
       </li>
+      <li>
+        <Link href="/session4">
+          <a>session4</a>
+        </Link>
+      </li>
     </ul>
   );
 }
