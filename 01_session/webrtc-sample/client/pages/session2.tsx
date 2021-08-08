@@ -1,9 +1,6 @@
-import React, { FC, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
-/**
- * non server video stream connection.
- */
-const Session2: FC = () => {
+const Session2: React.FC = () => {
   const [isStarted, setIsStarted] = useState(false);
   const [isCalling, setIsCalling] = useState(false);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -15,8 +12,8 @@ const Session2: FC = () => {
 
   return (
     <div>
-      <h2>Sample 2</h2>
-      <p>non server video stream connection.</p>
+      <h2>Session 2</h2>
+      <p>stream connection</p>
       <video
         ref={localVideoRef}
         style={{ width: "320px", maxWidth: "100%" }}
@@ -30,15 +27,9 @@ const Session2: FC = () => {
         playsInline
       />
       <div>
-        <button onClick={onClickStart} disabled={isStarted}>
-          Start
-        </button>
-        <button onClick={onClickCall} disabled={!isStarted || isCalling}>
-          Call
-        </button>
-        <button onClick={onClickHangUp} disabled={!isCalling}>
-          Hang Up
-        </button>
+        <button>Start</button>
+        <button>Call</button>
+        <button>Hang Up</button>
       </div>
     </div>
   );
