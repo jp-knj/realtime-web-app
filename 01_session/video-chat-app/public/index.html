@@ -48,12 +48,10 @@
                 <div border="1px solid black"><input type="text" id="text_username" readonly="readonly"><br /><video id="video_local" width="320" height="240" style="border: 1px solid black;" autoplay></video></div>
             </div>
 
-            <!-- エンターキーによるボタン押下を行うために、<button>ではなく<form>と<input type="submit">を使用。
-            ボタン押下(=submit)時にページリロードが行われないように、onsubmitの設定の最後に"return false;"を追加。-->
+            <textarea id="textarea_message_received" rows="10" cols="60" readonly="readonly"></textarea>
             <form action="" onsubmit="onsubmitButton_SendMessage(); return false;">
                 <input type="text" id="text_message_for_send" size="40" /><input type="submit" value="メッセージをおくる" />
             </form>
-            <textarea id="textarea_message_received" rows="10" cols="60" readonly="readonly"></textarea>
 
             <br />
             <button onclick="onclickButton_LeaveChat()">へやから出る</button>

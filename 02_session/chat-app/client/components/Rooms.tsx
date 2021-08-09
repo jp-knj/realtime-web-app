@@ -18,8 +18,8 @@ const Rooms = () => {
   }
 
   function handleJoinRoom(key) {
+    console.log("joined room");
     if (key === roomId) return;
-
     socket.emit(EVENTS.CLIENT.JOIN_ROOM, key);
   }
 

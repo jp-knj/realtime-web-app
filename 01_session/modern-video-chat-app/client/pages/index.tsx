@@ -1,62 +1,96 @@
 import React, { useEffect, useRef, useState } from "react";
 
-import ToggleCamera from "../components/ToggleCamera";
-import ToggleMic from "../components/ToggleMic";
-import Signaling from "../components/Signaling";
-
 const Home: React.FC = () => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [camera, setCamera] = useState<boolean>(false);
-  const cameraSetter = () => setCamera(!camera);
-  const [mute, setMute] = useState<boolean>(false);
-  const micSetter = () => setMute(!mute);
+  const constraints = {
+    audio: true,
+    video: true,
+  };
+
+  const [camera, setCamera] = useState(true);
+  const [mic, setMic] = useState(true);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const localPeerConnectionRef = useRef<RTCPeerConnection>();
+  const remotePeerConnectionRef = useRef<RTCPeerConnection>();
+  const localStreamRef = useRef<MediaStream>();
+  const remoteStreamRef = useRef<MediaStream>();
 
   useEffect(() => {
     navigator.mediaDevices
-      .getUserMedia({
-        audio: false,
-        video: {
-          width: 600,
-          height: 400,
-        },
-      })
+      .getUserMedia({ audio: mic ? true : false, video: true })
       .then((stream) => {
-        videoRef.current!.srcObject = stream;
+        localVideoRef.current!.srcObject = camera ? null : stream;
       });
-  }, []);
+  }, [camera, mic]);
 
-  //カメラのon/offボタンの実装
-  useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({ audio: true, video: true })
-      .then((stream) => {
-        videoRef.current!.srcObject = camera ? null : stream;
-      });
-  }, [camera]);
+  const onClickStart = async () => {
+    console.log("start");
+    localStreamRef.current = await navigator.mediaDevices.getUserMedia({
+      video: true,
+    });
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = localStreamRef.current;
+    }
+  };
 
-  //マイクのon/offボタンの実装
-  useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({ audio: mute ? false : true, video: true })
-      .then(() => {});
-    console.log(Audio);
-  }, [mute]);
+  const onClickCall = () => {
+    // On the local side:
+    console.log("UI Event: onClickCall btn clicked");
+    if (!localStreamRef.current) return;
+
+    console.log("UI Event: onClickCall btn clicked");
+    localPeerConnectionRef.current = new RTCPeerConnection();
+    localPeerConnectionRef.current.addEventListener(
+      "icecandidate",
+      (e: RTCPeerConnectionIceEvent) => {
+        if (e.candidate) {
+          if (!remotePeerConnectionRef.current) return;
+          remotePeerConnectionRef.current
+            .addIceCandidate(e.candidate)
+            .then(() => {
+              console.log("RemotePeer Event: addIceCandidate success.");
+            })
+            .catch((err: Error) => {
+              console.log(`Error:${err}`);
+            });
+        }
+      }
+    );
+  };
   return (
     <>
       <h1>ビデオチャット</h1>
-      <ToggleCamera mute={camera} setter={cameraSetter} />
-      <ToggleMic mute={mute} setter={micSetter} />
+      <button
+        onClick={() => {
+          setCamera(!camera);
+        }}
+      >
+        カメラ
+      </button>
+      <button
+        onClick={() => {
+          setMic(!mic);
+        }}
+      >
+        マイク
+      </button>
       <br />
       <video
-        ref={videoRef}
-        id="local-video"
+        ref={localVideoRef}
+        style={{ border: "1px solid black" }}
         autoPlay
         playsInline
-        muted
-        width="320"
-        height="240"
-      ></video>
-      <Signaling />
+      />
+      <video
+        ref={remoteVideoRef}
+        style={{ border: "1px solid black" }}
+        autoPlay
+        playsInline
+      />
+      <br />
+
+      <button onClick={onClickStart}>start</button>
+      <button onClick={onClickCall}>Call</button>
     </>
   );
 };
