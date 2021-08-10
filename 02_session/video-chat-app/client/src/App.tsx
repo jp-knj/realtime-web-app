@@ -1,11 +1,12 @@
-import React, { useEffect } from "react";
+import React from "react";
+import Routers from "./routers";
 import { connectWithWebSocket } from "./utils/wsConnection";
 
 function App() {
-  useEffect(() => {
+  React.useEffect(() => {
     connectWithWebSocket();
-  });
-  return <div>Hello React</div>;
+  }, []);
+  return <Routers />;
 }
 
 export default App;
