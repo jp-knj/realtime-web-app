@@ -1,13 +1,20 @@
-import express from "express";
 import socketClient from "socket.io-client";
 
 const SERVER = "http://localhost:5000";
 
-export const connectWithWebSocket = () => {
-  const socket = socketClient(SERVER);
+let socket: any;
 
+export const connectWithWebSocket = () => {
+  socket = socketClient(SERVER);
   socket.on("connection", () => {
     console.log("succesfully connected with wss server");
     console.log(socket.id);
+  });
+};
+
+export const registerNewUser = (username: string) => {
+  socket.emit("register-new-user", {
+    username: username,
+    socketId: socket.id,
   });
 };
