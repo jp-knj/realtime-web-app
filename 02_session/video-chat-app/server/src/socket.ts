@@ -1,6 +1,10 @@
 import { Server, Socket } from "socket.io";
 import logger from "./utils/logger";
 
+const broadcastEventTypes = {
+  ACTIVE_USERS: "ACTIVE_USERS",
+  GROUP_CALL_ROOMS: "GROUP_CALL_ROOMS",
+};
 function socket({ io }: { io: Server }) {
   let peers: any = [];
   logger.info(`Sockets enabled`);
@@ -18,6 +22,10 @@ function socket({ io }: { io: Server }) {
       });
       console.log("register new user");
       console.log(peers);
+      io.sockets.emit("broadcast", {
+        event: broadcastEventTypes.ACTIVE_USERS,
+        activeUsers: peers,
+      });
     });
   });
 }

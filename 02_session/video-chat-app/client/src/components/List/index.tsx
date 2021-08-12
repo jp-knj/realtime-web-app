@@ -1,27 +1,17 @@
+import { connect } from "react-redux";
 import Item from "../Item";
 
-const ActiveUsers = [
-  {
-    socketId: 11,
-    username: "kenji",
-  },
-  {
-    socketId: 22,
-    username: "kenta",
-  },
-  {
-    socketId: 33,
-    username: "kenzou",
-  },
-];
-const List = () => {
+const List = (activeUsers: any) => {
   return (
     <ul>
-      {ActiveUsers.map((activeUser) => (
+      {activeUsers.map((activeUser: any) => (
         <Item key={activeUser.socketId} activeUser={activeUser} />
       ))}
     </ul>
   );
 };
+const mapStateToProps = (dashboard: any) => ({
+  ...dashboard,
+});
 
-export default List;
+export default connect(mapStateToProps)(List);
