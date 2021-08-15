@@ -24,7 +24,7 @@ app.post("/api/todos", (req, res, next) => {
   const { title } = req.body;
   if (typeof title !== "string" || !title) {
     // titleがリクエストに含まれない場合はステータスコード400（Bad Request）
-    const err = new Error("title is reqired");
+    const err = new Error("title is required");
     err.statusCode = 400;
     return next(err);
   }
@@ -69,4 +69,4 @@ app.use((err, req, res, next) => {
   res.status(err.statusCode || 500).json({ error: err.message });
 });
 
-app.listen(3000);
+module.exports = app.listen(3000);
