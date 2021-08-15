@@ -19,4 +19,5 @@ const io = socket(server, {
 io.on("connection", (socket) => {
   socket.emit(`connection`, null);
   console.log("new user connected");
+  console.log(socket.id);
 });
