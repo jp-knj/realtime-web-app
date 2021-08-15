@@ -4,13 +4,24 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-	"file-system": "node app"
+    "leveldb": "node app",
+    "mocha": "mocha"
+  },
+  "mocha": {
+    "spec": "test/mocha/**/*.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
+    "level": "^7.0.0",
     "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "chai": "^4.3.4",
+    "mocha": "^9.0.3",
+    "nyc": "^15.1.0",
+    "sinon": "^11.1.2"
   }
 }
