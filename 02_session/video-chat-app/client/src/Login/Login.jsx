@@ -6,14 +6,16 @@ import UsernameInput from "./components/UsernameInput";
 import SubmitButton from "./components/SubmitButton";
 
 import { setUsername } from "../store/actions/dashboardActions";
+import { registerNewUser } from "../utils/wssConnection/wssConnection";
 
 const Login = ({ saveUsername }) => {
   const [username, setUsername] = React.useState("");
   const history = useHistory();
 
   const handleSubmitButtonPressed = () => {
-    history.push("/dashboard");
     saveUsername(username);
+    registerNewUser(username);
+    history.push("/dashboard");
   };
 
   return (
