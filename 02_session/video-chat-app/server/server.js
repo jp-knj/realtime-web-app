@@ -18,6 +18,11 @@ const io = socket(server, {
 
 let peers = [];
 
+const broadcastEventTypes = {
+  ACTIVE_USERS: "ACTIVE_USERS",
+  GROUP_CALL_ROOMS: "GROUP_CALL_ROOMS",
+};
+
 io.on("connection", (socket) => {
   socket.emit(`connection`, null);
   console.log("new user connected");
@@ -30,5 +35,10 @@ io.on("connection", (socket) => {
     });
     console.log("register new user");
     console.log(peers);
+  });
+
+  io.socket.emit("broadcast", {
+    event: broadcastEventTypes.ACTIVE_USERS,
+    activeUsers: peers,
   });
 });
