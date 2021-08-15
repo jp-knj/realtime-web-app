@@ -1,6 +1,6 @@
 "use strict";
 const { extname } = require("path");
-const { readdir, readFile } = require("fs").promises;
+const { readdir, readFile, writeFile, unlink } = require("fs").promises;
 
 exports.fetchAll = async () => {
   // 同一ディレクトリ内に存在するJSONファイルをすべて取得
@@ -13,15 +13,12 @@ exports.fetchAll = async () => {
     )
   );
 };
-
 exports.fetchByCompleted = (completed) =>
   exports
     .fetchAll()
     .then((all) => all.filter((todo) => todo.completed === completed));
-
 exports.create = (todo) =>
   writeFile(`${__dirname}/${todo.id}.json`, JSON.stringify(todo));
-
 exports.update = async (id, update) => {
   const fileName = `${__dirname}/${id}.json`;
   return readFile(fileName, "utf8").then(
@@ -36,7 +33,6 @@ exports.update = async (id, update) => {
     (err) => (err.code === "ENOENT" ? null : Promise.reject(err))
   );
 };
-
 exports.remove = (id) =>
   unlink(`${__dirname}/${id}.json`).then(
     () => id,
