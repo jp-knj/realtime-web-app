@@ -37,7 +37,7 @@ io.on("connection", (socket) => {
     console.log(peers);
   });
 
-  io.socket.emit("broadcast", {
+  socket.emit("broadcast", {
     event: broadcastEventTypes.ACTIVE_USERS,
     activeUsers: peers,
   });
