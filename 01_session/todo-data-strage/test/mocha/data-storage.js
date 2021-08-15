@@ -19,7 +19,7 @@ for (const dataStorageName of ["file-system", "leveldb"]) {
     });
 
     describe("create()、fetchAll()", () => {
-      it("create()で作成したToDoをfetchAll()で取得できる", async () => {
+      it("create()で作成したToDoをfetchAll()で取得", async () => {
         // 初期状態の確認
         assert.deepEqual(await fetchAll(), []);
 
@@ -38,7 +38,7 @@ for (const dataStorageName of ["file-system", "leveldb"]) {
       });
     });
     describe("fetchByCompleted()", () => {
-      it("completedの値が引数で指定したものと等しいToDoだけを取得できる", async () => {
+      it("completedの値が引数で指定したものと等しいToDoだけを取得", async () => {
         // 初期状態の確認
         assert.deepEqual(await fetchByCompleted(true), []);
         assert.deepEqual(await fetchByCompleted(false), []);
