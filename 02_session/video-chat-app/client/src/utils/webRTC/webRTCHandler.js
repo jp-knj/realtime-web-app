@@ -1,5 +1,9 @@
 import store from "../../store/store";
-import { setLocalStream } from "../../store/actions/callActions";
+import {
+  callStates,
+  setCallState,
+  setLocalStream,
+} from "../../store/actions/callActions";
 
 const defaultConstraints = {
   video: true,
@@ -11,6 +15,7 @@ export const getLocalStream = () => {
     .getUserMedia(defaultConstraints)
     .then((stream) => {
       store.dispatch(setLocalStream(stream));
+      store.dispatch(setCallState(callStates.CALL_AVAILABLE));
     })
     .catch((err) => {
       console.log(err);
