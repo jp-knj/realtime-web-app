@@ -1,18 +1,8 @@
 import React from "react";
 import ActiveUserListItem from "./ActiveUsersListItem";
+import { connect } from "react-redux";
 
-const activeUsers = [
-  { socketId: 321, username: "kenji" },
-  {
-    socketId: 333,
-    username: "kenzou",
-  },
-  {
-    socketId: 345,
-    username: "kensirou",
-  },
-];
-const ActiveUserList = () => {
+const ActiveUserList = ({ activeUsers }) => {
   return (
     <ul>
       {activeUsers.map((activeUser) => (
@@ -21,4 +11,9 @@ const ActiveUserList = () => {
     </ul>
   );
 };
-export default ActiveUserList;
+
+const mapStateToProps = ({ dashboard }) => ({
+  ...dashboard,
+});
+
+export default connect(mapStateToProps)(ActiveUserList);
