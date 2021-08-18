@@ -42,12 +42,20 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("disconnect", () => {
-    console.log("user disconnected");
-    peers = peers.filter((peer) => peer.socketId !== socket.id);
-    io.sockets.emit("broadcast", {
+  socket.on('disconnect', () => {
+    console.log('user disconnected');
+    peers = peers.filter(peer => peer.socketId !== socket.id);
+    io.sockets.emit('broadcast', {
       event: broadcastEventTypes.ACTIVE_USERS,
-      activeUsers: peers,
+      activeUsers: peers
+    });
+  });
+
+  socket.on('pre-offer', (data) => {
+    console.log('pre-offer handled');
+    io.to(data.callee.socketId).emit('pre-offer', {
+      callerUsername: data.caller.username,
+      callerSocketId: socket.id
     });
   });
 });

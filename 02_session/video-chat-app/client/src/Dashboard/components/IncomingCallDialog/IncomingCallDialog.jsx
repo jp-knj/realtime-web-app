@@ -1,13 +1,13 @@
 import React from "react";
 
-const IncomigCallDialog = () => {
+const IncomingCallDialog = ({ callerUsername }) => {
   const handleAcceptButtonPressed = () => {};
   const handleRejectedButtonPressed = () => {};
 
   return (
     <>
       <div>
-        <span>Rejected</span>
+        <span>{callerUsername}</span>
         <button onClick={handleAcceptButtonPressed}>Accepted</button>
         <button onClick={handleRejectedButtonPressed}>Rejected</button>
       </div>
@@ -15,4 +15,4 @@ const IncomigCallDialog = () => {
   );
 };
 
-export default IncomigCallDialog;
+export default IncomingCallDialog;
