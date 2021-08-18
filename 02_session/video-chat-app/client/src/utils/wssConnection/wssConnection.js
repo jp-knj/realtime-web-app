@@ -24,7 +24,7 @@ export const connectWithWebSocket = () => {
     handleBroadcastEvents(data);
   });
 
-  socket.on('pre-offer', (data) => {
+  socket.on("pre-offer", (data) => {
     webRTCHandler.handlePreOffer(data);
   });
 };
@@ -40,6 +40,9 @@ export const sendPreOffer = (data) => {
   socket.emit("pre-offer", data);
 };
 
+export const sendPreOfferAnswer = (data) => {
+  socket.emit("pre-offer-answer", data);
+};
 export const handleBroadcastEvents = (data) => {
   switch (data.event) {
     case broadcastEventTypes.ACTIVE_USERS:
