@@ -1,8 +1,16 @@
 import React from "react";
 
-const IncomingCallDialog = ({ callerUsername }) => {
-  const handleAcceptButtonPressed = () => {};
-  const handleRejectedButtonPressed = () => {};
+const IncomingCallDialog = ({
+  callerUsername,
+  acceptIncomingCallRequest,
+  rejectedIncomingCallRequest,
+}) => {
+  const handleAcceptButtonPressed = () => {
+    acceptIncomingCallRequest();
+  };
+  const handleRejectedButtonPressed = () => {
+    rejectedIncomingCallRequest();
+  };
 
   return (
     <>

@@ -5,6 +5,7 @@ import {
   callStates,
   setCallingDialogVisible,
   setCallerUsername,
+  setCallRejected,
 } from "../../store/actions/callActions";
 import * as wss from "../wssConnection/wssConnection";
 
@@ -73,6 +74,26 @@ export const rejectIncomingCallRequest = () => {
     callerSocketId: connectedUserSocketId,
     answer: preOfferAnswers.CALL_REJECTED,
   });
+};
+
+export const handlePreOfferAnswer = (data) => {
+  store.dispatch(setCallingDialogVisible(false));
+
+  if (data.answer === preOfferAnswers.CALL_ACCEPTED) {
+  } else {
+    let rejectionReason;
+    if (data.answer === preOfferAnswers.CALL_NOT_AVAILABLE) {
+      rejectionReason = "ほかのヒトと話をしているよ";
+    } else {
+      rejectionReason = "断わられたよ";
+    }
+    store.dispatch(
+      setCallRejected({
+        rejectd: true,
+        reason: rejectionReason,
+      })
+    );
+  }
 };
 
 export const checkIfCallIsPassible = () => {

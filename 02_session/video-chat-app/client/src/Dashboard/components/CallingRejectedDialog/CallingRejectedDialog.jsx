@@ -1,9 +1,18 @@
 import React from "react";
 
-const CallingRejectedDialog = () => {
+const CallingRejectedDialog = ({ reason, hideCallRejectedDialog }) => {
+  React.useEffect(() => {
+    setTimeout(() => {
+      hideCallRejectedDialog({
+        rejected: false,
+        reason: "",
+      });
+    });
+  }, [4000]);
+
   return (
     <>
-      <span>Rejected</span>
+      <span>{reason}</span>
     </>
   );
 };
