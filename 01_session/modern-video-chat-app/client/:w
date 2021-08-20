@@ -1,0 +1,124 @@
+import React, { useEffect, useRef, useState } from "react";
+
+const Home: React.FC = () => {
+  const constraints = {
+    audio: true,
+    video: true,
+  };
+
+  const [camera, setCamera] = useState(false);
+  const [mic, setMic] = useState(false);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const textareaSendRef = useRef<HTMLTextAreaElement>(null);
+  const textareaReceiveRef = useRef<HTMLTextAreaElement>(null);
+  const localConnectionRef = useRef<RTCPeerConnection>(null);
+  const remoteConnectionRef = useRef<RTCPeerConnection>(null);
+
+  //画面がロードされたタイミングでwebカメラに接続
+  useEffect(() => {
+    navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+      localVideoRef.current!.srcObject = stream;
+    });
+  }, []);
+
+  // on/offボタンの実装
+  useEffect(() => {
+    navigator.mediaDevices
+      .getUserMedia({ audio: mic ? false : true, video: true })
+      .then((stream) => {
+        localVideoRef.current!.srcObject = camera ? null : stream;
+      });
+  }, [mic, camera]);
+
+  const createPeerConnection = (stream: MediaStream) => {
+    // RTCPeerConnectionオブジェクトの生成
+    let config = { iceServers: [] };
+    let localConnectionRef = new RTCPeerConnection(config);
+
+    setupRTCPeerConnectionEventHandler(localConnectionRef);
+
+    if (stream) {
+      stream.getTracks().forEach((track) => {
+        rtcPeerConnection.addTrack(track, stream);
+      });
+    } else {
+      console.log("No local stream.");
+    }
+
+    return rtcPeerConnection;
+  };
+
+  const onClickCreateOfferSDP = () => {
+    console.log("UI Event: Create Offer SDP btn clicked");
+    if (localConnectionRef) {
+      // 既にコネクションオブジェクトあり
+      alert("Connection object already exists.");
+      return;
+    }
+  };
+
+  return (
+    <>
+      <h1>ビデオチャット</h1>
+      <button
+        onClick={() => {
+          setCamera(!camera);
+        }}
+      >
+        カメラ
+      </button>
+      <button
+        onClick={() => {
+          setMic(!mic);
+        }}
+      >
+        マイク
+      </button>
+      <br />
+      <video
+        ref={localVideoRef}
+        style={{ border: "1px solid black" }}
+        autoPlay
+        playsInline
+      ></video>
+      <table>
+        <tbody>
+          <tr>
+            <td></td>
+            <td>オファー側</td>
+            <td>アンサー側</td>
+          </tr>
+          <tr>
+            <td>オファーSDP</td>
+            <td>
+              <button onClick={onClickCreateOfferSDP}>オファーSDP作成</button>
+              <br />
+              <textarea ref={textareaSendRef}></textarea>
+            </td>
+            <td>
+              <br />
+              <textarea></textarea>
+            </td>
+          </tr>
+          <tr>
+            <td>アンサーSDP</td>
+            <td>
+              <br />
+              <textarea></textarea>
+              <br />
+              <button>アンサーSDPの準備 と チャット</button>
+            </td>
+            <td>
+              <button>オファーSDPの準備 と アンサーSDP作成.</button>
+              <br />
+              <textarea></textarea>
+              <br />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </>
+  );
+};
+
+export default Home;
