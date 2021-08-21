@@ -1,5 +1,5 @@
 export default {
-  corsOrigin: "http://localhost:5000",
+  corsOrigin: "http://localhost:3000",
   port: 5000,
   host: "localhost",
 };
