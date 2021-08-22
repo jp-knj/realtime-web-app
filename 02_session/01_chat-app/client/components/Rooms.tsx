@@ -23,7 +23,7 @@ const Rooms = () => {
         <button onClick={handleCreateRoom}>Create Room</button>
       </>
       {Object.keys(rooms).map((key) => {
-        return <div key={key}>{key}</div>;
+        return <div key={key}>{rooms[key].name}</div>;
       })}
     </nav>
   );

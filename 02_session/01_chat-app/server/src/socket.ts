@@ -39,9 +39,9 @@ function socket({ io }: { io: Server }) {
 
       // emit back to the room creator with all the rooms
       socket.emit(EVENTS.SERVER.ROOMS, rooms);
-      socket.emit(EVENTS.SERVER.JOIN_ROOM, roomId);
 
       // emit event back the room creator
+      socket.emit(EVENTS.SERVER.JOIN_ROOM, roomId);
     });
   });
 }

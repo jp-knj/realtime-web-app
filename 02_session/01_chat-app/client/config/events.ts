@@ -5,6 +5,7 @@ const EVENTS = {
   },
   SERVER: {
     ROOMS: "ROOMS",
+    JOINED_ROOM: "JOINED_ROOM",
   },
 };
 

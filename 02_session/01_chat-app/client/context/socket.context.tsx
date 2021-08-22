@@ -21,11 +21,12 @@ const SocketContext = createContext<Context>({
 const SocketsProvider = (props: any) => {
   const [username, setUsername] = useState<string>("");
   const [roomId, setRoomId] = useState("");
-  const [rooms, setRooms] = useState([]);
+  const [rooms, setRooms] = useState({});
 
   socket.on(EVENTS.SERVER.ROOMS, (value) => {
     setRooms(value);
   });
+
   return (
     <SocketContext.Provider
       value={{ socket, username, setUsername, roomId, rooms }}
