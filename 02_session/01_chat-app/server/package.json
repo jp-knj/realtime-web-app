@@ -19,6 +19,7 @@
     "dayjs": "^1.10.6",
     "express": "^4.17.1",
     "mongoose": "^5.13.7",
+    "nanoid": "^3.1.25",
     "pino": "^6.13.1",
     "pino-pretty": "^6.0.0",
     "socket.io": "^4.1.3"
