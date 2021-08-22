@@ -1,5 +1,4 @@
 import "tailwindcss/tailwind.css";
-import "../styles/globals.css";
 import SocketsProvider from "../context/socket.context";
 
 function MyApp({ Component, pageProps }) {
@@ -7,7 +6,7 @@ function MyApp({ Component, pageProps }) {
     <SocketsProvider>
       <Component {...pageProps} />
     </SocketsProvider>
-    );
+  );
 }
 
 export default MyApp;

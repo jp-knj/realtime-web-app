@@ -21,9 +21,12 @@ export default function Home() {
           <button onClick={handleSetUsername}>Start</button>
         </div>
       )}
-      <Rooms />
-      <Messages />
-      <h2>{socket.id}</h2>
+      {username && (
+        <>
+          <Rooms />
+          <Messages />
+        </>
+      )}
     </>
   );
 }
