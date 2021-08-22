@@ -6,11 +6,12 @@ const EVENTS = {
   connection: "connection",
   CLIENT: {
     CREATE_ROOM: "CREATE_ROOM",
+    JOIN_ROOM: "JOIN_ROOM",
     SEND_ROOM_MESSAGE: "SEND_ROOM_MESSAGE",
   },
   SERVER: {
     ROOMS: "ROOMS",
-    JOIN_ROOM: "JOIN_ROOM",
+    JOINED_ROOM: "JOINED_ROOM",
     ROOM_MESSAGE: "ROOM_MESSAGE",
   },
 };
@@ -43,7 +44,7 @@ function socket({ io }: { io: Server }) {
       socket.emit(EVENTS.SERVER.ROOMS, rooms);
 
       // emit event back the room creator
-      socket.emit(EVENTS.SERVER.JOIN_ROOM, roomId);
+      socket.emit(EVENTS.SERVER.JOINED_ROOM, roomId);
     });
 
     socket.on(
@@ -58,6 +59,11 @@ function socket({ io }: { io: Server }) {
         });
       }
     );
+
+    socket.on(EVENTS.CLIENT.JOIN_ROOM, (roomId) => {
+      socket.join(roomId);
+      socket.emit(EVENTS.SERVER.JOINED_ROOM, roomId);
+    });
   });
 }
 

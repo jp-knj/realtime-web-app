@@ -7,10 +7,10 @@ const Messages = () => {
   const newMessageRef = useRef(null);
   function handleSendMessage() {
     const message = newMessageRef.current.value;
-    if (!String(message).trim()) {
-      return;
-    }
+    if (!String(message).trim()) return;
+
     socket.emit(EVENTS.CLIENT.SEND_ROOM_MESSAGE, { roomId, message, username });
+
     const date = new Date();
     setMessages([
       ...message,
@@ -20,6 +20,7 @@ const Messages = () => {
         time: `${date.getHours()}: ${date.getMinutes()}}`,
       },
     ]);
+    newMessageRef.current.value = "";
   }
 
   if (!roomId) {
@@ -28,8 +29,8 @@ const Messages = () => {
 
   return (
     <>
-      {messages.map(({ messages }, index) => {
-        return <p key={index}> {messages}</p>;
+      {messages.map(({ message }, index) => {
+        return <p key={index}> {message}</p>;
       })}
       <>
         <textarea
