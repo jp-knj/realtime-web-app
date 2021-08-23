@@ -7,7 +7,7 @@ interface Context {
   socket: Socket;
   username?: string;
   setUsername: Function;
-  messages?: { messages: string; username: string; time: string }[];
+  messages?: { message: string; username: string; time: string }[];
   setMessages: Function;
   roomId?: string;
   rooms: object;
@@ -20,7 +20,6 @@ const SocketContext = createContext<Context>({
   messages: [],
   setMessages: () => false,
   rooms: {},
-  messages: [],
 });
 
 const SocketsProvider = (props: any) => {
@@ -37,8 +36,8 @@ const SocketsProvider = (props: any) => {
     setMessages([]);
   });
 
-  socket.on(EVENTS.SERVER.ROOM_MESSAGE, ({ messages, username, time }) => {
-    setMessages([...messages, { messages, username, time }]);
+  socket.on(EVENTS.SERVER.ROOM_MESSAGE, ({ message, username, time }) => {
+    setMessages([...messages, { message, username, time }]);
   });
 
   return (
