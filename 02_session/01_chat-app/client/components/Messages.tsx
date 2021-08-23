@@ -1,46 +1,68 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import EVENTS from "../config/events";
 import { useSockets } from "../context/socket.context";
 
 const Messages = () => {
   const { socket, messages, roomId, username, setMessages } = useSockets();
   const newMessageRef = useRef(null);
+  const messageEndRef = useRef(null);
+
   function handleSendMessage() {
     const message = newMessageRef.current.value;
-    if (!String(message).trim()) return;
+
+    if (!String(message).trim()) {
+      return;
+    }
 
     socket.emit(EVENTS.CLIENT.SEND_ROOM_MESSAGE, { roomId, message, username });
 
     const date = new Date();
+
     setMessages([
-      ...message,
+      ...messages,
       {
         username: "You",
         message,
-        time: `${date.getHours()}: ${date.getMinutes()}}`,
+        time: `${date.getHours()}:${date.getMinutes()}`,
       },
     ]);
+
     newMessageRef.current.value = "";
   }
+
+  useEffect(() => {
+    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   if (!roomId) {
     return <div />;
   }
-
   return (
-    <>
-      {messages.map(({ message }, index) => {
-        return <p key={index}> {message}</p>;
-      })}
-      <>
+    <div>
+      <div>
+        {messages.map(({ message, username, time }, index) => {
+          return (
+            <div key={index}>
+              <div key={index}>
+                <span>
+                  {username} - {time}
+                </span>
+                <span>{message}</span>
+              </div>
+            </div>
+          );
+        })}
+        <div ref={messageEndRef} />
+      </div>
+      <div>
         <textarea
           rows={1}
-          placeholder="Tell us what you are thing"
+          placeholder="Tell us what you are thinking"
           ref={newMessageRef}
         />
-        <button onClick={handleSendMessage}>Send</button>
-      </>
-    </>
+        <button onClick={handleSendMessage}>send</button>
+      </div>
+    </div>
   );
 };
 
